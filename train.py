@@ -10,6 +10,7 @@ import torch
 import pypianoroll
 from pypianoroll import Multitrack, Track
 from tqdm import tqdm
+from torch.utils.tensorboard import SummaryWriter
 
 from model import create_generator_from_config
 from model import Discriminator
@@ -222,6 +223,12 @@ def train(args, config):
     current_time = datetime.datetime.now().strftime('%Y%m%d-%H%M%S')
     save_dir = os.path.join(args.model_dir, f"{config.experiment}-{current_time}")
     os.makedirs(save_dir)
+    train_log_dir = os.path.join(save_dir, "train")
+    # eval_log_dir = os.path.join(save_dir, "eval")
+    train_summary_writer = SummaryWriter(train_log_dir)
+    # train_summary_writer.add_graph(generator, data_loader.__iter__().next()[0])
+    # train_summary_writer.add_graph(discriminator, data_loader.__iter__().next()[0])
+    # eval_summary_writer = SummaryWriter(eval_log_dir)
 
 
     # Initialize step
@@ -282,6 +289,8 @@ def train(args, config):
             #             )
             #         )
             #
+            train_summary_writer.add_scalar("g_loss", g_loss, step)
+            train_summary_writer.add_scalar("d_loss", d_loss, step)
 
             if (step % 100 == 0):
                 torch.save(generator.state_dict(), os.path.join(save_dir, f"generator-{step}.pth"))
@@ -290,6 +299,7 @@ def train(args, config):
             progress_bar.update(1)
             if step >= n_steps:
                 break
+    train_summary_writer.close()
     torch.save(generator.state_dict(), os.path.join(args.model_dir, "generator-final.pth"))
     torch.save(discriminator.state_dict(), os.path.join(args.model_dir, "discriminator-final.pth"))
 
