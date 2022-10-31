@@ -1,0 +1,4 @@
+# Training
+batch_size: 16
+n_steps: 200
+seed: 0
