@@ -9,5 +9,5 @@
 module load singularity
 singularity exec \
         --bind $HOME,/data/group1/${USER} \
-        --nv /data/group1/${USER}/MusicTransformer-pytorch.sif \
+        --nv /data/group1/${USER}/latest.sif \
         bash _run.sh
