@@ -1,7 +1,7 @@
 #!/bin/bash
 
-#PJM -L rscgrp=cx-share
-#PJM -L gpu=1
+#PJM -L rscgrp=cx-single
+#PJM -L gpu=4
 #PJM -L elapse=72:00:00
 #PJM -L jobenv=singularity
 #PJM -j
