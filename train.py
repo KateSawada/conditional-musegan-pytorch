@@ -212,7 +212,9 @@ def train(args, config):
     # Transfer the neural nets and samples to GPU
     if torch.cuda.is_available():
         discriminator = discriminator.cuda()
+        discriminator = torch.nn.DataParallel(discriminator)
         generator = generator.cuda()
+        generator = torch.nn.DataParallel(generator)
 
     # Create an empty dictionary to sotre history samples
     # history_samples = {}
