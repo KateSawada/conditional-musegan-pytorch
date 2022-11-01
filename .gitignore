@@ -166,3 +166,7 @@ config/base.yml
 config/generate.yml
 config/train.yml
 data.npy
+
+# 不老での学習時の出力ファイル
+*.out
+*err
