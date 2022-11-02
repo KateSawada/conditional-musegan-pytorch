@@ -215,6 +215,8 @@ def train(args, config):
         discriminator = torch.nn.DataParallel(discriminator)
         generator = generator.cuda()
         generator = torch.nn.DataParallel(generator)
+        data = data.cuda()
+
 
     # Create an empty dictionary to sotre history samples
     # history_samples = {}
@@ -248,11 +250,11 @@ def train(args, config):
             d_loss, g_loss = train_one_step(d_optimizer, g_optimizer, real_samples[0], generator, discriminator, batch_size, latent_dim)
 
             # Record smoothened loss values to LiveLoss logger
-            if step > 0:
-                running_d_loss = 0.05 * d_loss + 0.95 * running_d_loss
-                running_g_loss = 0.05 * g_loss + 0.95 * running_g_loss
-            else:
-                running_d_loss, running_g_loss = 0.0, 0.0
+            # if step > 0:
+            #     running_d_loss = 0.05 * d_loss + 0.95 * running_d_loss
+            #     running_g_loss = 0.05 * g_loss + 0.95 * running_g_loss
+            # else:
+            #     running_d_loss, running_g_loss = 0.0, 0.0
             # liveloss.update({'negative_critic_loss': -running_d_loss})
             # liveloss.update({'d_loss': running_d_loss, 'g_loss': running_g_loss})
 
@@ -299,6 +301,7 @@ def train(args, config):
                 torch.save(discriminator.state_dict(), os.path.join(save_dir, f"discriminator-{step}.pth"))
             step += 1
             progress_bar.update(1)
+            del d_loss, g_loss
             if step >= n_steps:
                 break
     train_summary_writer.close()
