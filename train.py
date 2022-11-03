@@ -230,8 +230,8 @@ def train(args, config):
     train_log_dir = os.path.join(save_dir, "train")
     # eval_log_dir = os.path.join(save_dir, "eval")
     train_summary_writer = SummaryWriter(train_log_dir)
-    # train_summary_writer.add_graph(generator, data_loader.__iter__().next()[0])
-    # train_summary_writer.add_graph(discriminator, data_loader.__iter__().next()[0])
+    # train_summary_writer.add_graph(generator, torch.randn(batch_size, latent_dim))
+    train_summary_writer.add_graph(discriminator, next(iter(data_loader))[0])
     # eval_summary_writer = SummaryWriter(eval_log_dir)
 
 
