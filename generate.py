@@ -1,3 +1,4 @@
+import datetime
 import os
 from operator import attrgetter
 from typing import TYPE_CHECKING, Dict, Optional, Union
@@ -119,7 +120,7 @@ def generate(args, config):
 
     generator = create_generator_from_config(config)
     # generator.load_state_dict(torch.load("../exp/trial/results/checkpoint/generator-20000.pth"))
-    generator.load_state_dict(torch.load(os.path.join(args.model_dir, "generator-final.pth")))
+    generator.load_state_dict(torch.load(config.pth))
 
     # Prepare the inputs for the sampler, which wil run during the training
     sample_latent = torch.randn(config.n_samples, config.latent_dim)
@@ -129,6 +130,7 @@ def generate(args, config):
 
     # Display generated samples
     samples = samples.transpose(1, 0, 2, 3).reshape(config.n_tracks, -1, config.n_pitches)
+    # print(samples.shape)  # (5, 256, 72)
     tracks = []
     for idx, (program, is_drum, track_name) in enumerate(
         zip(config.programs, config.is_drums, config.track_names)
@@ -145,7 +147,7 @@ def generate(args, config):
                 pianoroll=pianoroll
             )
         )
-    m = Multitrack(tracks=tracks, tempo=tempo_array)
+    m = Multitrack(tracks=tracks, tempo=tempo_array, resolution=config.beat_resolution)
 
     axs = m.plot()
 
@@ -160,9 +162,14 @@ def generate(args, config):
             else:
                 ax.axvline(x - 0.5, color='k', linestyle='-', linewidth=1)
     plt.gcf().set_size_inches((16, 8))
+
+    out_dir = os.path.join(config.out_dir, datetime.datetime.now().strftime('%Y%m%d-%H%M%S'))
+    os.makedirs(out_dir)
+    config.save(out_dir)
+    plt.savefig(os.path.join(out_dir, "pianoroll.png"))
     plt.show()
 
-    to_pretty_midi(m).write(os.path.join(args.model_dir, "generated.mid"))
+    to_pretty_midi(m).write(os.path.join(out_dir, "generated.mid"))
     # for i in range(config.n_tracks):
     #     pypianoroll.write(f"{i}.mid", tracks[i].standardize())
         # track = StandardTrack(program=config.program[i], is_drum=config.is_drum[i], pianoroll=samples[i])

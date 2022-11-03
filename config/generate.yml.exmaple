@@ -1,2 +1,4 @@
 seed: 0
 n_samples: 4
+pth: model/generator-final.pth
+out_dir: model/out
