@@ -119,6 +119,7 @@ def generate(args, config):
 
 
     generator = create_generator_from_config(config)
+    generator = torch.nn.DataParallel(generator)
     # generator.load_state_dict(torch.load("../exp/trial/results/checkpoint/generator-20000.pth"))
     generator.load_state_dict(torch.load(config.pth))
 
