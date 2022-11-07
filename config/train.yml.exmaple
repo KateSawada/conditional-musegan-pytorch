@@ -2,3 +2,7 @@
 batch_size: 16
 n_steps: 200
 seed: 0
+
+# if additional training, specify path to trained model
+trained_g_model:
+trained_d_model:
