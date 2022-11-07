@@ -217,6 +217,13 @@ def train(args, config):
         generator = torch.nn.DataParallel(generator)
         data = data.cuda()
 
+    if (config.trained_g_model is not None):
+        generator.load_state_dict(torch.load(config.trained_g_model))
+        print(f"generator weights loaded from {config.trained_g_model}")
+    if (config.trained_d_model is not None):
+        discriminator.load_state_dict(torch.load(config.trained_d_model))
+        print(f"discriminator weights loaded from {config.trained_d_model}")
+
 
     # Create an empty dictionary to sotre history samples
     # history_samples = {}
