@@ -170,3 +170,9 @@ data.npy
 # 不老での学習時の出力ファイル
 *.out
 *err
+
+# numpy
+*.npy
+*.npz
+
+/ignore/
