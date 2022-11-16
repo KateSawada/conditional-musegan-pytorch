@@ -29,14 +29,20 @@ def create_generator_from_config(config):
 class Generator(torch.nn.Module):
     """A convolutional neural network (CNN) based generator. The generator takes
     as input a latent vector and outputs a fake sample."""
-    def __init__(self, latent_dim, n_tracks, n_measures, measure_resolution, n_pitches):
+    def __init__(self, latent_dim, n_tracks, n_measures, measure_resolution, n_pitches,
+                 conditioning=False, conditioning_dim=0):
         super().__init__()
         self.latent_dim = latent_dim
         self.n_tracks = n_tracks
         self.n_measures = n_measures
         self.measure_resolution = measure_resolution
         self.n_pitches = n_pitches
-        self.transconv0 = GeneraterBlock(latent_dim, 256, (4, 1, 1), (4, 1, 1))
+        self.conditioning = conditioning
+        self.conditioning_dim = conditioning_dim
+        if (self.conditioning):
+            self.transconv0 = GeneraterBlock(latent_dim + conditioning_dim, 256, (4, 1, 1), (4, 1, 1))
+        else:
+            self.transconv0 = GeneraterBlock(latent_dim, 256, (4, 1, 1), (4, 1, 1))
         self.transconv1 = GeneraterBlock(256, 128, (1, 4, 1), (1, 4, 1))
         self.transconv2 = GeneraterBlock(128, 64, (1, 1, 4), (1, 1, 4))
         self.transconv3 = GeneraterBlock(64, 32, (1, 1, 3), (1, 1, 1))
@@ -75,6 +81,10 @@ class LayerNorm(torch.nn.Module):
             self.beta = torch.nn.Parameter(torch.zeros(n_features))
 
     def forward(self, x):
+        # conditioning
+        if (self.conditioning):
+            x, condition = x
+            x = torch.cat([x, condition], 1)
         shape = [-1] + [1] * (x.dim() - 1)
         mean = x.view(x.size(0), -1).mean(1).view(*shape)
         std = x.view(x.size(0), -1).std(1).view(*shape)
@@ -108,7 +118,7 @@ class Discriminator(torch.nn.Module):
         self.n_measures = n_measures
         self.measure_resolution = measure_resolution
         self.n_pitches = n_pitches
-        self.conditioning =conditioning
+        self.conditioning = conditioning
         self.conditioning_dim = conditioning_dim
         super().__init__()
         self.conv0 = torch.nn.ModuleList([
