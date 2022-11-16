@@ -103,9 +103,11 @@ def to_pretty_midi(
 
 if __name__ == "__main__":
     parser = get_argument_parser()
+    parser.add_argument("-n", "--name", type=str, required=True)
+    # example: "data/lpd_5/lpd_5_cleansed/A/A/A/TRAAAZF12903CCCF6B/05f21994c71a5f881e64f45c8d706165.npz"
     args = parser.parse_args()
     config.load(args.model_dir, args.configs, initialize=True)
-    filename = "data/lpd_5/lpd_5_cleansed/A/A/A/TRAAAZF12903CCCF6B/05f21994c71a5f881e64f45c8d706165.npz"
+    filename = args.name
 
     measure_resolution = 4 * config.beat_resolution
 
