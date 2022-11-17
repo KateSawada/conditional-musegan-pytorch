@@ -70,8 +70,13 @@ def compute_gradient_penalty(discriminator, real_samples, fake_samples):
     alpha = torch.rand(real_samples.size(0), 1, 1, 1).cuda()
     interpolates = (alpha * real_samples + ((1 - alpha) * fake_samples))
     interpolates = interpolates.requires_grad_(True)
+
+    conditioning = True  # TODO: configから読むように変更
+    conditioning_dim = 64  # TODO: configから読むように変更
+    condition = torch.ones(conditioning_dim)  # TODO: データセットから読むように変更
+
     # Get the discriminator output for the interpolations
-    d_interpolates = discriminator(interpolates)
+    d_interpolates = discriminator([interpolates, condition])
     # Get gradients w.r.t. the interpolations
     fake = torch.ones(real_samples.size(0), 1).cuda()
     gradients = torch.autograd.grad(
@@ -92,6 +97,10 @@ def train_one_step(d_optimizer, g_optimizer, real_samples, generator, discrimina
     # Sample from the lantent distribution
     latent = torch.randn(batch_size, latent_dim)
 
+    conditioning = True  # TODO: configから読むように変更
+    conditioning_dim = 64  # TODO: configから読むように変更
+    condition = torch.ones(conditioning_dim)  # TODO: データセットから読むように変更
+
     # Transfer data to GPU
     if torch.cuda.is_available():
         real_samples = real_samples.cuda()
@@ -100,18 +109,26 @@ def train_one_step(d_optimizer, g_optimizer, real_samples, generator, discrimina
     # === Train the discriminator ===
     # Reset cached gradients to zero
     d_optimizer.zero_grad()
-    # Get discriminator outputs for the real samples
-    prediction_real = discriminator(real_samples)
+    if (conditioning):
+        # Get discriminator outputs for the real samples
+        prediction_real = discriminator([real_samples, condition])
+        # Generate fake samples with the generator
+        fake_samples = generator([latent, condition])
+    else:
+        prediction_real = discriminator(real_samples)
+        fake_samples = generator(latent)
     # Compute the loss function
     # d_loss_real = torch.mean(torch.nn.functional.relu(1. - prediction_real))
     d_loss_real = -torch.mean(prediction_real)
     # Backpropagate the gradients
     d_loss_real.backward()
 
-    # Generate fake samples with the generator
-    fake_samples = generator(latent)
     # Get discriminator outputs for the fake samples
-    prediction_fake_d = discriminator(fake_samples.detach())
+    if (conditioning):
+        prediction_fake_d = discriminator([fake_samples.detach(), condition])
+    else:
+        prediction_fake_d = discriminator(fake_samples.detach())
+
     # Compute the loss function
     # d_loss_fake = torch.mean(torch.nn.functional.relu(1. + prediction_fake_d))
     d_loss_fake = torch.mean(prediction_fake_d)
@@ -131,7 +148,10 @@ def train_one_step(d_optimizer, g_optimizer, real_samples, generator, discrimina
     # Reset cached gradients to zero
     g_optimizer.zero_grad()
     # Get discriminator outputs for the fake samples
-    prediction_fake_g = discriminator(fake_samples)
+    if (conditioning):
+        prediction_fake_g = discriminator([fake_samples, condition])
+    else:
+        prediction_fake_g = discriminator(fake_samples)
     # Compute the loss function
     g_loss = -torch.mean(prediction_fake_g)
     # Backpropagate the gradients
@@ -193,7 +213,7 @@ def train(args, config):
         dataset, batch_size=batch_size, drop_last=True, shuffle=True)
 
     # Create neural networks
-    discriminator = Discriminator(n_tracks, n_measures, measure_resolution, n_pitches)
+    discriminator = Discriminator(n_tracks, n_measures, measure_resolution, n_pitches, config.conditioning, config.conditioning_dim)
     generator = create_generator_from_config(config)
     print("Number of parameters in G: {}".format(
         sum(p.numel() for p in generator.parameters() if p.requires_grad)))
@@ -216,7 +236,6 @@ def train(args, config):
         generator = generator.cuda()
         generator = torch.nn.DataParallel(generator)
         data = data.cuda()
-
     if (config.trained_g_model is not None):
         generator.load_state_dict(torch.load(config.trained_g_model))
         print(f"generator weights loaded from {config.trained_g_model}")
@@ -238,7 +257,7 @@ def train(args, config):
     # eval_log_dir = os.path.join(save_dir, "eval")
     train_summary_writer = SummaryWriter(train_log_dir)
     # train_summary_writer.add_graph(generator, torch.randn(batch_size, latent_dim))
-    train_summary_writer.add_graph(discriminator, next(iter(data_loader))[0])
+    # train_summary_writer.add_graph(discriminator, next(iter(data_loader))[0])
     # eval_summary_writer = SummaryWriter(eval_log_dir)
 
 
