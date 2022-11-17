@@ -57,7 +57,7 @@ class Generator(torch.nn.Module):
 
 
     def forward(self, x):
-        x = x.view(-1, self.latent_dim, 1, 1, 1)
+        x = x.view(-1, self.latent_dim * self.conditioning_dim, 1, 1, 1)
         x = self.transconv0(x)
         x = self.transconv1(x)
         x = self.transconv2(x)
@@ -146,6 +146,9 @@ class Discriminator(torch.nn.Module):
         x = [conv(x[:, [i]]) for i, conv in enumerate(self.conv0)]
         x = torch.cat([conv(x_) for x_, conv in zip(x, self.conv1)], 1)
         if (self.conditioning):
+            condition = condition.view(-1, self.conditioning_dim, 1, 1, 1)
+            condition = condition.expand(-1, self.conditioning_dim, 4, 4, 6)
+            # ↑ Dynamic ver: condition.expand([-1, self.conditioning_dim] + list(x.shape[2:]))
             x = torch.cat([x, condition], 1)
         x = self.conv2(x)
         x = self.conv3(x)
