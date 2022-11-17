@@ -57,6 +57,10 @@ class Generator(torch.nn.Module):
 
 
     def forward(self, x):
+        # conditioning
+        if (self.conditioning):
+            x, condition = x
+            x = torch.cat([x, condition], 1)
         x = x.view(-1, self.latent_dim * self.conditioning_dim, 1, 1, 1)
         x = self.transconv0(x)
         x = self.transconv1(x)
@@ -81,10 +85,6 @@ class LayerNorm(torch.nn.Module):
             self.beta = torch.nn.Parameter(torch.zeros(n_features))
 
     def forward(self, x):
-        # conditioning
-        if (self.conditioning):
-            x, condition = x
-            x = torch.cat([x, condition], 1)
         shape = [-1] + [1] * (x.dim() - 1)
         mean = x.view(x.size(0), -1).mean(1).view(*shape)
         std = x.view(x.size(0), -1).std(1).view(*shape)
