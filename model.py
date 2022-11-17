@@ -19,9 +19,11 @@ def create_generator_from_config(config):
     n_measures = config.n_measures  # number of measures per sample
     beat_resolution = config.beat_resolution  # temporal resolution of a beat (in timestep)
     latent_dim = config.latent_dim
+    conditioning = config.conditioning
+    conditioning_dim = config.conditioning_dim
 
     measure_resolution = 4 * beat_resolution
-    generator = Generator(latent_dim, n_tracks, n_measures, measure_resolution, n_pitches)
+    generator = Generator(latent_dim, n_tracks, n_measures, measure_resolution, n_pitches, conditioning, conditioning_dim)
 
     return generator
 
@@ -60,8 +62,13 @@ class Generator(torch.nn.Module):
         # conditioning
         if (self.conditioning):
             x, condition = x
+            condition = condition.view(-1, self.conditioning_dim)
+            shape = list(x.shape)
+            shape[1] = self.conditioning_dim
+            # match shape of x and condition excluding dim 1
+            condition = condition.expand(shape)
             x = torch.cat([x, condition], 1)
-        x = x.view(-1, self.latent_dim * self.conditioning_dim, 1, 1, 1)
+        x = x.view(-1, self.latent_dim + self.conditioning_dim, 1, 1, 1)
         x = self.transconv0(x)
         x = self.transconv1(x)
         x = self.transconv2(x)
@@ -147,8 +154,10 @@ class Discriminator(torch.nn.Module):
         x = torch.cat([conv(x_) for x_, conv in zip(x, self.conv1)], 1)
         if (self.conditioning):
             condition = condition.view(-1, self.conditioning_dim, 1, 1, 1)
-            condition = condition.expand(-1, self.conditioning_dim, 4, 4, 6)
-            # ↑ Dynamic ver: condition.expand([-1, self.conditioning_dim] + list(x.shape[2:]))
+            shape = list(x.shape)
+            shape[1] = self.conditioning_dim
+            # match shape of x and condition excluding dim 1
+            condition = condition.expand(shape)
             x = torch.cat([x, condition], 1)
         x = self.conv2(x)
         x = self.conv3(x)
