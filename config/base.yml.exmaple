@@ -10,3 +10,5 @@ is_drums: [True, False, False, False, False]  # drum indicator for each track
 track_names: ['Drums', 'Piano', 'Guitar', 'Bass', 'Strings']  # name of each track
 tempo: 100
 latent_dim: 128
+conditioning: True
+conditioning_dim: 128
