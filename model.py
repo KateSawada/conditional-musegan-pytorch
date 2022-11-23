@@ -173,11 +173,12 @@ class Encoder(torch.nn.Module):
     """Convert piano-roll to latent expression.
     This model architecture is similar to Discriminator.
     """
-    def __init__(self, n_tracks, n_measures, measure_resolution, n_pitches):
+    def __init__(self, n_tracks, n_measures, measure_resolution, n_pitches, output_dim):
         self.n_tracks = n_tracks
         self.n_measures = n_measures
         self.measure_resolution = measure_resolution
         self.n_pitches = n_pitches
+        self.output_dim = output_dim
         super().__init__()
         self.conv0 = torch.nn.ModuleList([
             DiscriminatorBlock(1, 16, (1, 1, 12), (1, 1, 12)) for _ in range(n_tracks)
@@ -190,7 +191,7 @@ class Encoder(torch.nn.Module):
         self.conv4 = DiscriminatorBlock(64, 128, (1, 4, 1), (1, 4, 1))
         self.conv5 = DiscriminatorBlock(128, 128, (2, 1, 1), (1, 1, 1))
         self.conv6 = DiscriminatorBlock(128, 256, (3, 1, 1), (3, 1, 1))
-        self.dense = torch.nn.Linear(256, 128)
+        self.dense = torch.nn.Linear(256, output_dim)
 
     def forward(self, x):
         x = x.view(-1, self.n_tracks, self.n_measures, self.measure_resolution, self.n_pitches)
