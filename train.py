@@ -62,7 +62,7 @@ def load_data(id_list, dataset_root, beat_resolution, lowest_pitch,
     np.save(filename, data)
     return data
 
-def compute_gradient_penalty(discriminator, real_samples, fake_samples):
+def compute_gradient_penalty(discriminator, real_samples, fake_samples, condition=None):
     """Compute the gradient penalty for regularization. Intuitively, the
     gradient penalty help stablize the magnitude of the gradients that the
     discriminator provides to the generator, and thus help stablize the training
@@ -72,9 +72,8 @@ def compute_gradient_penalty(discriminator, real_samples, fake_samples):
     interpolates = (alpha * real_samples + ((1 - alpha) * fake_samples))
     interpolates = interpolates.requires_grad_(True)
 
-    conditioning = True  # TODO: configから読むように変更
-    conditioning_dim = 64  # TODO: configから読むように変更
-    condition = torch.ones(conditioning_dim)  # TODO: データセットから読むように変更
+    conditioning = (condition is not None)
+    conditioning_dim = condition.shape[1]
 
     # Get the discriminator output for the interpolations
     d_interpolates = discriminator([interpolates, condition])
@@ -100,14 +99,17 @@ def train_one_step(d_optimizer, g_optimizer, real_samples,
     # Sample from the lantent distribution
     latent = torch.randn(batch_size, latent_dim)
 
-    conditioning = True  # TODO: configから読むように変更
-    conditioning_dim = 64  # TODO: configから読むように変更
-    condition = torch.ones(conditioning_dim)  # TODO: データセットから読むように変更
 
     # Transfer data to GPU
     if torch.cuda.is_available():
         real_samples = real_samples.cuda()
         latent = latent.cuda()
+
+    conditioning = (encoder is not None)
+    if conditioning:
+        conditioning_dim = encoder.output_dim
+        with torch.inference_mode():
+            condition = encoder(real_samples)
 
     # === Train the discriminator ===
     # Reset cached gradients to zero
@@ -140,7 +142,8 @@ def train_one_step(d_optimizer, g_optimizer, real_samples,
 
     # Compute gradient penalty
     gradient_penalty = 10.0 * compute_gradient_penalty(
-        discriminator, real_samples.data, fake_samples.data)
+        discriminator, real_samples.data, fake_samples.data,
+        condition.data)
     # Backpropagate the gradients
     gradient_penalty.backward()
 
