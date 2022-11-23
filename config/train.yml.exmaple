@@ -6,3 +6,8 @@ train_data: "data.npy"
 # if additional training, specify path to trained model
 trained_g_model:
 trained_d_model:
+conditioning_model:
+conditioning_model_pth:
+# if you want to apply conditioning
+# conditioning_model: triplet
+# conditioning_model_pth: "ignore/conditioning/triplet/model600.pth"
