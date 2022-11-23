@@ -7,7 +7,9 @@ train_data: "data.npy"
 trained_g_model:
 trained_d_model:
 conditioning_model:
+conditioning_dim:
 conditioning_model_pth:
 # if you want to apply conditioning
 # conditioning_model: triplet
+# conditioning_dim: 128
 # conditioning_model_pth: "ignore/conditioning/triplet/model600.pth"
