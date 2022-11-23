@@ -340,7 +340,7 @@ def train(args, config):
             train_summary_writer.add_scalar("g_loss", g_loss, step)
             train_summary_writer.add_scalar("d_loss", d_loss, step)
 
-            if (step % 100 == 0):
+            if (step % 10000 == 0):
                 torch.save(generator.state_dict(), os.path.join(save_dir, f"generator-{step}.pth"))
                 torch.save(discriminator.state_dict(), os.path.join(save_dir, f"discriminator-{step}.pth"))
             step += 1
