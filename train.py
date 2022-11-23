@@ -25,7 +25,8 @@ def msd_id_to_dirs(msd_id):
     return os.path.join(msd_id[2], msd_id[3], msd_id[4], msd_id)
 
 def load_data(id_list, dataset_root, beat_resolution, lowest_pitch,
-              n_pitches, measure_resolution, n_measures, n_samples_per_song):
+              n_pitches, measure_resolution, n_measures, n_samples_per_song,
+              filename):
     data = []
     # Iterate over all the songs in the ID list
     for msd_id in tqdm(id_list):
@@ -58,7 +59,7 @@ def load_data(id_list, dataset_root, beat_resolution, lowest_pitch,
     print(f"Successfully collect {len(data)} samples from {len(id_list)} songs")
     print(f"Data shape : {data.shape}")
 
-    np.save("data.npy", data)
+    np.save(filename, data)
     return data
 
 def compute_gradient_penalty(discriminator, real_samples, fake_samples):
@@ -200,12 +201,12 @@ def train(args, config):
     id_list = list(set(id_list))
 
     # load data
-    if (os.path.exists("data.npy")):
-        data = np.load("data.npy")
+    if (os.path.exists(config.train_data)):
+        data = np.load(config.train_data)
     else:
         data = load_data(id_list, dataset_root, beat_resolution, lowest_pitch,
                     n_pitches, measure_resolution, n_measures,
-                    n_samples_per_song)
+                    n_samples_per_song, config.train_data)
 
     data = torch.as_tensor(data, dtype=torch.float32)
     dataset = torch.utils.data.TensorDataset(data)
