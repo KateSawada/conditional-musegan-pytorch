@@ -13,7 +13,7 @@ from tqdm import tqdm
 from torch.utils.tensorboard import SummaryWriter
 
 from model import create_generator_from_config
-from model import Discriminator
+from model import Discriminator, Encoder
 from custom import config
 from custom import get_argument_parser
 from fix_seed import fix_seed
@@ -25,7 +25,8 @@ def msd_id_to_dirs(msd_id):
     return os.path.join(msd_id[2], msd_id[3], msd_id[4], msd_id)
 
 def load_data(id_list, dataset_root, beat_resolution, lowest_pitch,
-              n_pitches, measure_resolution, n_measures, n_samples_per_song):
+              n_pitches, measure_resolution, n_measures, n_samples_per_song,
+              filename):
     data = []
     # Iterate over all the songs in the ID list
     for msd_id in tqdm(id_list):
@@ -58,10 +59,10 @@ def load_data(id_list, dataset_root, beat_resolution, lowest_pitch,
     print(f"Successfully collect {len(data)} samples from {len(id_list)} songs")
     print(f"Data shape : {data.shape}")
 
-    np.save("data.npy", data)
+    np.save(filename, data)
     return data
 
-def compute_gradient_penalty(discriminator, real_samples, fake_samples):
+def compute_gradient_penalty(discriminator, real_samples, fake_samples, condition=None):
     """Compute the gradient penalty for regularization. Intuitively, the
     gradient penalty help stablize the magnitude of the gradients that the
     discriminator provides to the generator, and thus help stablize the training
@@ -70,8 +71,12 @@ def compute_gradient_penalty(discriminator, real_samples, fake_samples):
     alpha = torch.rand(real_samples.size(0), 1, 1, 1).cuda()
     interpolates = (alpha * real_samples + ((1 - alpha) * fake_samples))
     interpolates = interpolates.requires_grad_(True)
+
+    conditioning = (condition is not None)
+    conditioning_dim = condition.shape[1]
+
     # Get the discriminator output for the interpolations
-    d_interpolates = discriminator(interpolates)
+    d_interpolates = discriminator([interpolates, condition])
     # Get gradients w.r.t. the interpolations
     fake = torch.ones(real_samples.size(0), 1).cuda()
     gradients = torch.autograd.grad(
@@ -87,31 +92,48 @@ def compute_gradient_penalty(discriminator, real_samples, fake_samples):
     gradient_penalty = ((gradients.norm(2, dim=1) - 1) ** 2).mean()
     return gradient_penalty
 
-def train_one_step(d_optimizer, g_optimizer, real_samples, generator, discriminator, batch_size, latent_dim):
+def train_one_step(d_optimizer, g_optimizer, real_samples,
+                   generator, discriminator, batch_size, latent_dim,
+                   encoder=None):
     """Train the networks for one step."""
     # Sample from the lantent distribution
     latent = torch.randn(batch_size, latent_dim)
+
 
     # Transfer data to GPU
     if torch.cuda.is_available():
         real_samples = real_samples.cuda()
         latent = latent.cuda()
 
+    conditioning = (encoder is not None)
+    if conditioning:
+        conditioning_dim = encoder.output_dim
+        with torch.inference_mode():
+            condition = encoder(real_samples)
+
     # === Train the discriminator ===
     # Reset cached gradients to zero
     d_optimizer.zero_grad()
-    # Get discriminator outputs for the real samples
-    prediction_real = discriminator(real_samples)
+    if (conditioning):
+        # Get discriminator outputs for the real samples
+        prediction_real = discriminator([real_samples, condition])
+        # Generate fake samples with the generator
+        fake_samples = generator([latent, condition])
+    else:
+        prediction_real = discriminator(real_samples)
+        fake_samples = generator(latent)
     # Compute the loss function
     # d_loss_real = torch.mean(torch.nn.functional.relu(1. - prediction_real))
     d_loss_real = -torch.mean(prediction_real)
     # Backpropagate the gradients
     d_loss_real.backward()
 
-    # Generate fake samples with the generator
-    fake_samples = generator(latent)
     # Get discriminator outputs for the fake samples
-    prediction_fake_d = discriminator(fake_samples.detach())
+    if (conditioning):
+        prediction_fake_d = discriminator([fake_samples.detach(), condition])
+    else:
+        prediction_fake_d = discriminator(fake_samples.detach())
+
     # Compute the loss function
     # d_loss_fake = torch.mean(torch.nn.functional.relu(1. + prediction_fake_d))
     d_loss_fake = torch.mean(prediction_fake_d)
@@ -120,7 +142,8 @@ def train_one_step(d_optimizer, g_optimizer, real_samples, generator, discrimina
 
     # Compute gradient penalty
     gradient_penalty = 10.0 * compute_gradient_penalty(
-        discriminator, real_samples.data, fake_samples.data)
+        discriminator, real_samples.data, fake_samples.data,
+        condition.data)
     # Backpropagate the gradients
     gradient_penalty.backward()
 
@@ -131,7 +154,10 @@ def train_one_step(d_optimizer, g_optimizer, real_samples, generator, discrimina
     # Reset cached gradients to zero
     g_optimizer.zero_grad()
     # Get discriminator outputs for the fake samples
-    prediction_fake_g = discriminator(fake_samples)
+    if (conditioning):
+        prediction_fake_g = discriminator([fake_samples, condition])
+    else:
+        prediction_fake_g = discriminator(fake_samples)
     # Compute the loss function
     g_loss = -torch.mean(prediction_fake_g)
     # Backpropagate the gradients
@@ -180,12 +206,12 @@ def train(args, config):
     id_list = list(set(id_list))
 
     # load data
-    if (os.path.exists("data.npy")):
-        data = np.load("data.npy")
+    if (os.path.exists(config.train_data)):
+        data = np.load(config.train_data)
     else:
         data = load_data(id_list, dataset_root, beat_resolution, lowest_pitch,
                     n_pitches, measure_resolution, n_measures,
-                    n_samples_per_song)
+                    n_samples_per_song, config.train_data)
 
     data = torch.as_tensor(data, dtype=torch.float32)
     dataset = torch.utils.data.TensorDataset(data)
@@ -193,7 +219,7 @@ def train(args, config):
         dataset, batch_size=batch_size, drop_last=True, shuffle=True)
 
     # Create neural networks
-    discriminator = Discriminator(n_tracks, n_measures, measure_resolution, n_pitches)
+    discriminator = Discriminator(n_tracks, n_measures, measure_resolution, n_pitches, config.conditioning, config.conditioning_dim)
     generator = create_generator_from_config(config)
     print("Number of parameters in G: {}".format(
         sum(p.numel() for p in generator.parameters() if p.requires_grad)))
@@ -206,8 +232,17 @@ def train(args, config):
     g_optimizer = torch.optim.Adam(
         generator.parameters(), lr=0.001, betas=(0.5, 0.9))
 
-    # Prepare the inputs for the sampler, which wil run during the training
+    # conditioning config
+    conditioning = config.conditioning
+    conditioning_model = config.conditioning_model  # TODO: triplet以外も追加?
+    conditioning_model_pth = config.conditioning_model_pth
+    conditioning_dim = config.conditioning_dim
 
+    if conditioning:
+        encoder = Encoder(
+            n_tracks, n_measures, measure_resolution, n_pitches,
+            conditioning_dim)
+        encoder.load_state_dict(torch.load(conditioning_model_pth))
 
     # Transfer the neural nets and samples to GPU
     if torch.cuda.is_available():
@@ -216,14 +251,14 @@ def train(args, config):
         generator = generator.cuda()
         generator = torch.nn.DataParallel(generator)
         data = data.cuda()
-
+        if conditioning:
+            encoder = encoder.cuda()
     if (config.trained_g_model is not None):
         generator.load_state_dict(torch.load(config.trained_g_model))
         print(f"generator weights loaded from {config.trained_g_model}")
     if (config.trained_d_model is not None):
         discriminator.load_state_dict(torch.load(config.trained_d_model))
         print(f"discriminator weights loaded from {config.trained_d_model}")
-
 
     # Create an empty dictionary to sotre history samples
     # history_samples = {}
@@ -238,7 +273,7 @@ def train(args, config):
     # eval_log_dir = os.path.join(save_dir, "eval")
     train_summary_writer = SummaryWriter(train_log_dir)
     # train_summary_writer.add_graph(generator, torch.randn(batch_size, latent_dim))
-    train_summary_writer.add_graph(discriminator, next(iter(data_loader))[0])
+    # train_summary_writer.add_graph(discriminator, next(iter(data_loader))[0])
     # eval_summary_writer = SummaryWriter(eval_log_dir)
 
 
@@ -254,7 +289,9 @@ def train(args, config):
         for real_samples in data_loader:
             # Train the neural networks
             generator.train()
-            d_loss, g_loss = train_one_step(d_optimizer, g_optimizer, real_samples[0], generator, discriminator, batch_size, latent_dim)
+            d_loss, g_loss = train_one_step(
+                d_optimizer, g_optimizer, real_samples[0],
+                generator, discriminator, batch_size, latent_dim, encoder)
 
             # Record smoothened loss values to LiveLoss logger
             # if step > 0:
@@ -303,7 +340,7 @@ def train(args, config):
             train_summary_writer.add_scalar("g_loss", g_loss, step)
             train_summary_writer.add_scalar("d_loss", d_loss, step)
 
-            if (step % 100 == 0):
+            if (step % 10000 == 0):
                 torch.save(generator.state_dict(), os.path.join(save_dir, f"generator-{step}.pth"))
                 torch.save(discriminator.state_dict(), os.path.join(save_dir, f"discriminator-{step}.pth"))
             step += 1
