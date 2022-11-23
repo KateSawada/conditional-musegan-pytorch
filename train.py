@@ -13,7 +13,7 @@ from tqdm import tqdm
 from torch.utils.tensorboard import SummaryWriter
 
 from model import create_generator_from_config
-from model import Discriminator
+from model import Discriminator, Encoder
 from custom import config
 from custom import get_argument_parser
 from fix_seed import fix_seed
@@ -227,8 +227,17 @@ def train(args, config):
     g_optimizer = torch.optim.Adam(
         generator.parameters(), lr=0.001, betas=(0.5, 0.9))
 
-    # Prepare the inputs for the sampler, which wil run during the training
+    # conditioning config
+    conditioning_model = config.conditioning_model
+    conditioning = (conditioning_model is not None)  # TODO: triplet以外も追加?
+    conditioning_model_pth = config.conditioning_model_pth
+    conditioning_dim = config.conditioning_dim
 
+    if conditioning:
+        encoder = Encoder(
+            n_tracks, n_measures, measure_resolution, n_pitches,
+            conditioning_dim)
+        encoder.load_state_dict(torch.load(conditioning_model_pth))
 
     # Transfer the neural nets and samples to GPU
     if torch.cuda.is_available():
@@ -237,13 +246,14 @@ def train(args, config):
         generator = generator.cuda()
         generator = torch.nn.DataParallel(generator)
         data = data.cuda()
+        if conditioning:
+            encoder = encoder.cuda()
     if (config.trained_g_model is not None):
         generator.load_state_dict(torch.load(config.trained_g_model))
         print(f"generator weights loaded from {config.trained_g_model}")
     if (config.trained_d_model is not None):
         discriminator.load_state_dict(torch.load(config.trained_d_model))
         print(f"discriminator weights loaded from {config.trained_d_model}")
-
 
     # Create an empty dictionary to sotre history samples
     # history_samples = {}
