@@ -93,7 +93,9 @@ def compute_gradient_penalty(discriminator, real_samples, fake_samples):
     gradient_penalty = ((gradients.norm(2, dim=1) - 1) ** 2).mean()
     return gradient_penalty
 
-def train_one_step(d_optimizer, g_optimizer, real_samples, generator, discriminator, batch_size, encoder=None):
+def train_one_step(d_optimizer, g_optimizer, real_samples,
+                   generator, discriminator, batch_size, latent_dim,
+                   encoder=None):
     """Train the networks for one step."""
     # Sample from the lantent distribution
     latent = torch.randn(batch_size, latent_dim)
@@ -176,6 +178,7 @@ def train(args, config):
     is_drums = config.is_drums  # drum indicator for each track
     track_names = config.track_names  # name of each track
     tempo = config.tempo
+    latent_dim = config.latent_dim
 
     # Training
     batch_size = config.batch_size
@@ -253,7 +256,6 @@ def train(args, config):
     if (config.trained_d_model is not None):
         discriminator.load_state_dict(torch.load(config.trained_d_model))
         print(f"discriminator weights loaded from {config.trained_d_model}")
-    exit()
 
     # Create an empty dictionary to sotre history samples
     # history_samples = {}
@@ -284,7 +286,9 @@ def train(args, config):
         for real_samples in data_loader:
             # Train the neural networks
             generator.train()
-            d_loss, g_loss = train_one_step(d_optimizer, g_optimizer, real_samples[0], generator, discriminator, batch_size, encoder)
+            d_loss, g_loss = train_one_step(
+                d_optimizer, g_optimizer, real_samples[0],
+                generator, discriminator, batch_size, latent_dim, encoder)
 
             # Record smoothened loss values to LiveLoss logger
             # if step > 0:
