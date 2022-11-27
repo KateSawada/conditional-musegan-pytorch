@@ -160,8 +160,8 @@ cython_debug/
 #.idea/
 
 experiment.yml
-model/
-conditioned_model
+/*model*
+!*model*py
 data/
 /config/*
 !/config/base.yml.example
