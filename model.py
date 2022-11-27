@@ -70,11 +70,14 @@ class Generator(torch.nn.Module):
             shape[1] = self.conditioning_dim
             # match shape of x and condition excluding dim 1
             condition = condition.expand(shape)
-            x = torch.cat([x, condition], 1)
-        x = x.view(-1, self.latent_dim + self.conditioning_dim, 1, 1, 1)
+        x = x.view(-1, self.latent_dim, 1, 1, 1)
         x = self.transconv0(x)
         x = self.transconv1(x)
         x = self.transconv2(x)
+        if (self.conditioning):
+            print(x.shape)
+            x = torch.cat([x, condition], 1)
+
         x = self.transconv3(x)
         x = [transconv(x) for transconv in self.transconv4]
         x = torch.cat([transconv(x_) for x_, transconv in zip(x, self.transconv5)], 1)
