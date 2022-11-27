@@ -46,7 +46,7 @@ class Generator(torch.nn.Module):
 
         # self.transconv3 にconditionを入力
         if (self.conditioning):
-            self.transconv2 = GeneraterBlock(128, 64 + conditioning_dim, (1, 1, 4), (1, 1, 4))
+            self.transconv2 = GeneraterBlock(128, 64, (1, 1, 4), (1, 1, 4))
             self.transconv3 = GeneraterBlock(64  + conditioning_dim, 32, (1, 1, 3), (1, 1, 1))
         else:
             self.transconv2 = GeneraterBlock(128, 64, (1, 1, 4), (1, 1, 4))
@@ -75,7 +75,7 @@ class Generator(torch.nn.Module):
         x = self.transconv1(x)
         x = self.transconv2(x)
         if (self.conditioning):
-            print(x.shape)
+            condition = condition.unsqueeze(2).unsqueeze(2).unsqueeze(2).expand(-1, self.conditioning_dim, 4, 4, 4)
             x = torch.cat([x, condition], 1)
 
         x = self.transconv3(x)
