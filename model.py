@@ -41,13 +41,16 @@ class Generator(torch.nn.Module):
         self.n_pitches = n_pitches
         self.conditioning = conditioning
         self.conditioning_dim = conditioning_dim
-        if (self.conditioning):
-            self.transconv0 = GeneraterBlock(latent_dim + conditioning_dim, 256, (4, 1, 1), (4, 1, 1))
-        else:
-            self.transconv0 = GeneraterBlock(latent_dim, 256, (4, 1, 1), (4, 1, 1))
+        self.transconv0 = GeneraterBlock(latent_dim, 256, (4, 1, 1), (4, 1, 1))
         self.transconv1 = GeneraterBlock(256, 128, (1, 4, 1), (1, 4, 1))
-        self.transconv2 = GeneraterBlock(128, 64, (1, 1, 4), (1, 1, 4))
-        self.transconv3 = GeneraterBlock(64, 32, (1, 1, 3), (1, 1, 1))
+
+        # self.transconv3 にconditionを入力
+        if (self.conditioning):
+            self.transconv2 = GeneraterBlock(128, 64 + conditioning_dim, (1, 1, 4), (1, 1, 4))
+            self.transconv3 = GeneraterBlock(64  + conditioning_dim, 32, (1, 1, 3), (1, 1, 1))
+        else:
+            self.transconv2 = GeneraterBlock(128, 64, (1, 1, 4), (1, 1, 4))
+            self.transconv3 = GeneraterBlock(64, 32, (1, 1, 3), (1, 1, 1))
         self.transconv4 = torch.nn.ModuleList([
             GeneraterBlock(32, 16, (1, 4, 1), (1, 4, 1))
             for _ in range(n_tracks)
