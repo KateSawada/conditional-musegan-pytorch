@@ -152,7 +152,7 @@ def train_one_step(d_optimizer, g_optimizer, real_samples,
     recon_loss = mse(condition.clone(), encoder(fake_samples))
 
     # Backpropagate the gradients
-    (g_loss + recon_loss).backward()
+    (g_loss + 10 * recon_loss).backward()
     # Update the weights
     g_optimizer.step()
 
