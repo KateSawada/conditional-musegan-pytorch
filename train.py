@@ -72,11 +72,8 @@ def compute_gradient_penalty(discriminator, real_samples, fake_samples, conditio
     interpolates = (alpha * real_samples + ((1 - alpha) * fake_samples))
     interpolates = interpolates.requires_grad_(True)
 
-    conditioning = (condition is not None)
-    conditioning_dim = condition.shape[1]
-
     # Get the discriminator output for the interpolations
-    d_interpolates = discriminator([interpolates, condition])
+    d_interpolates = discriminator(interpolates)
     # Get gradients w.r.t. the interpolations
     fake = torch.ones(real_samples.size(0), 1).cuda()
     gradients = torch.autograd.grad(
@@ -114,14 +111,10 @@ def train_one_step(d_optimizer, g_optimizer, real_samples,
     # === Train the discriminator ===
     # Reset cached gradients to zero
     d_optimizer.zero_grad()
-    if (conditioning):
-        # Get discriminator outputs for the real samples
-        prediction_real = discriminator([real_samples, condition])
-        # Generate fake samples with the generator
-        fake_samples = generator([latent, condition])
-    else:
-        prediction_real = discriminator(real_samples)
-        fake_samples = generator(latent)
+    # Get discriminator outputs for the real samples
+    prediction_real = discriminator(real_samples)
+    # Generate fake samples with the generator
+    fake_samples = generator([latent, condition])
     # Compute the loss function
     # d_loss_real = torch.mean(torch.nn.functional.relu(1. - prediction_real))
     d_loss_real = -torch.mean(prediction_real)
@@ -129,10 +122,7 @@ def train_one_step(d_optimizer, g_optimizer, real_samples,
     d_loss_real.backward()
 
     # Get discriminator outputs for the fake samples
-    if (conditioning):
-        prediction_fake_d = discriminator([fake_samples.detach(), condition])
-    else:
-        prediction_fake_d = discriminator(fake_samples.detach())
+    prediction_fake_d = discriminator(fake_samples.detach())
 
     # Compute the loss function
     # d_loss_fake = torch.mean(torch.nn.functional.relu(1. + prediction_fake_d))
@@ -154,18 +144,19 @@ def train_one_step(d_optimizer, g_optimizer, real_samples,
     # Reset cached gradients to zero
     g_optimizer.zero_grad()
     # Get discriminator outputs for the fake samples
-    if (conditioning):
-        prediction_fake_g = discriminator([fake_samples, condition])
-    else:
-        prediction_fake_g = discriminator(fake_samples)
+    prediction_fake_g = discriminator(fake_samples)
     # Compute the loss function
     g_loss = -torch.mean(prediction_fake_g)
+
+    mse = torch.nn.MSELoss()
+    recon_loss = mse(condition.detach(), encoder(fake_samples.clone()))
+
     # Backpropagate the gradients
-    g_loss.backward()
+    (g_loss + recon_loss).backward()
     # Update the weights
     g_optimizer.step()
 
-    return d_loss_real + d_loss_fake, g_loss
+    return d_loss_real + d_loss_fake, g_loss, recon_loss
 
 def train(args, config):
     fix_seed(config.seed)
@@ -289,7 +280,7 @@ def train(args, config):
         for real_samples in data_loader:
             # Train the neural networks
             generator.train()
-            d_loss, g_loss = train_one_step(
+            d_loss, g_loss, recon_loss = train_one_step(
                 d_optimizer, g_optimizer, real_samples[0],
                 generator, discriminator, batch_size, latent_dim, encoder)
 
@@ -304,7 +295,7 @@ def train(args, config):
 
             # Update losses to progress bar
             progress_bar.set_description_str(
-                "(d_loss={: 8.6f}, g_loss={: 8.6f})".format(d_loss, g_loss))
+                "(d_loss={: 8.6f}, g_loss={: 8.6f}), recon_loss={: 8.6f})".format(d_loss, g_loss, recon))
 
             #
             # if step % sample_interval == 0:
@@ -339,13 +330,14 @@ def train(args, config):
             #
             train_summary_writer.add_scalar("g_loss", g_loss, step)
             train_summary_writer.add_scalar("d_loss", d_loss, step)
+            train_summary_writer.add_scalar("recon_loss", recon_loss, step)
 
             if (step % 10000 == 0):
                 torch.save(generator.state_dict(), os.path.join(save_dir, f"generator-{step}.pth"))
                 torch.save(discriminator.state_dict(), os.path.join(save_dir, f"discriminator-{step}.pth"))
             step += 1
             progress_bar.update(1)
-            del d_loss, g_loss
+            del d_loss, g_loss, recon_loss
             if step >= n_steps:
                 break
     train_summary_writer.close()
