@@ -149,7 +149,7 @@ def train_one_step(d_optimizer, g_optimizer, real_samples,
     g_loss = -torch.mean(prediction_fake_g)
 
     mse = torch.nn.MSELoss()
-    recon_loss = mse(condition.detach(), encoder(fake_samples.clone()))
+    recon_loss = mse(condition.clone(), encoder(fake_samples))
 
     # Backpropagate the gradients
     (g_loss + recon_loss).backward()
@@ -295,7 +295,7 @@ def train(args, config):
 
             # Update losses to progress bar
             progress_bar.set_description_str(
-                "(d_loss={: 8.6f}, g_loss={: 8.6f}), recon_loss={: 8.6f})".format(d_loss, g_loss, recon))
+                "(d_loss={: 8.6f}, g_loss={: 8.6f}), recon_loss={: 8.6f})".format(d_loss, g_loss, recon_loss))
 
             #
             # if step % sample_interval == 0:
