@@ -41,10 +41,10 @@ class Generator(torch.nn.Module):
         self.n_pitches = n_pitches
         self.conditioning = conditioning
         self.conditioning_dim = conditioning_dim
-        self.transconv0 = GeneraterBlock(latent_dim + conditioning_dim, 256, (4, 1, 1), (4, 1, 1))
+        self.transconv0 = GeneraterBlock(latent_dim, 256, (4, 1, 1), (4, 1, 1))
         self.transconv1 = GeneraterBlock(256, 128, (1, 4, 1), (1, 4, 1))
         self.transconv2 = GeneraterBlock(128, 64, (1, 1, 4), (1, 1, 4))
-        self.transconv3 = GeneraterBlock(64, 32, (1, 1, 3), (1, 1, 1))
+        self.transconv3 = GeneraterBlock(64  + conditioning_dim, 32, (1, 1, 3), (1, 1, 1))
         self.transconv4 = torch.nn.ModuleList([
             GeneraterBlock(32, 16, (1, 4, 1), (1, 4, 1))
             for _ in range(n_tracks)
@@ -63,11 +63,12 @@ class Generator(torch.nn.Module):
         shape[1] = self.conditioning_dim
         # match shape of x and condition excluding dim 1
         condition = condition.expand(shape)
-        x = torch.cat([x, condition], 1)
-        x = x.view(-1, self.latent_dim + self.conditioning_dim, 1, 1, 1)
+        x = x.view(-1, self.latent_dim, 1, 1, 1)
         x = self.transconv0(x)
         x = self.transconv1(x)
         x = self.transconv2(x)
+        condition = condition.unsqueeze(2).unsqueeze(2).unsqueeze(2).expand(-1, self.conditioning_dim, 4, 4, 4)
+        x = torch.cat([x, condition], 1)
         x = self.transconv3(x)
         x = [transconv(x) for transconv in self.transconv4]
         x = torch.cat([transconv(x_) for x_, transconv in zip(x, self.transconv5)], 1)
