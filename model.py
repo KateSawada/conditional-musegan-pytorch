@@ -41,10 +41,7 @@ class Generator(torch.nn.Module):
         self.n_pitches = n_pitches
         self.conditioning = conditioning
         self.conditioning_dim = conditioning_dim
-        if (self.conditioning):
-            self.transconv0 = GeneraterBlock(latent_dim + conditioning_dim, 256, (4, 1, 1), (4, 1, 1))
-        else:
-            self.transconv0 = GeneraterBlock(latent_dim, 256, (4, 1, 1), (4, 1, 1))
+        self.transconv0 = GeneraterBlock(latent_dim + conditioning_dim, 256, (4, 1, 1), (4, 1, 1))
         self.transconv1 = GeneraterBlock(256, 128, (1, 4, 1), (1, 4, 1))
         self.transconv2 = GeneraterBlock(128, 64, (1, 1, 4), (1, 1, 4))
         self.transconv3 = GeneraterBlock(64, 32, (1, 1, 3), (1, 1, 1))
@@ -60,14 +57,13 @@ class Generator(torch.nn.Module):
 
     def forward(self, x):
         # conditioning
-        if (self.conditioning):
-            x, condition = x
-            condition = condition.view(-1, self.conditioning_dim)
-            shape = list(x.shape)
-            shape[1] = self.conditioning_dim
-            # match shape of x and condition excluding dim 1
-            condition = condition.expand(shape)
-            x = torch.cat([x, condition], 1)
+        x, condition = x
+        condition = condition.view(-1, self.conditioning_dim)
+        shape = list(x.shape)
+        shape[1] = self.conditioning_dim
+        # match shape of x and condition excluding dim 1
+        condition = condition.expand(shape)
+        x = torch.cat([x, condition], 1)
         x = x.view(-1, self.latent_dim + self.conditioning_dim, 1, 1, 1)
         x = self.transconv0(x)
         x = self.transconv1(x)
@@ -134,11 +130,7 @@ class Discriminator(torch.nn.Module):
         self.conv1 = torch.nn.ModuleList([
             DiscriminatorBlock(16, 16, (1, 4, 1), (1, 4, 1)) for _ in range(n_tracks)
         ])
-        if (self.conditioning):
-            # add conditioning in conv2
-            self.conv2 = DiscriminatorBlock(16 * n_tracks + self.conditioning_dim, 64, (1, 1, 3), (1, 1, 1))
-        else:
-            self.conv2 = DiscriminatorBlock(16 * n_tracks, 64, (1, 1, 3), (1, 1, 1))
+        self.conv2 = DiscriminatorBlock(16 * n_tracks, 64, (1, 1, 3), (1, 1, 1))
         self.conv3 = DiscriminatorBlock(64, 64, (1, 1, 4), (1, 1, 4))
         self.conv4 = DiscriminatorBlock(64, 128, (1, 4, 1), (1, 4, 1))
         self.conv5 = DiscriminatorBlock(128, 128, (2, 1, 1), (1, 1, 1))
@@ -147,18 +139,9 @@ class Discriminator(torch.nn.Module):
 
     def forward(self, x):
         # conditioning
-        if (self.conditioning):
-            x, condition = x
         x = x.view(-1, self.n_tracks, self.n_measures, self.measure_resolution, self.n_pitches)
         x = [conv(x[:, [i]]) for i, conv in enumerate(self.conv0)]
         x = torch.cat([conv(x_) for x_, conv in zip(x, self.conv1)], 1)
-        if (self.conditioning):
-            condition = condition.view(-1, self.conditioning_dim, 1, 1, 1)
-            shape = list(x.shape)
-            shape[1] = self.conditioning_dim
-            # match shape of x and condition excluding dim 1
-            condition = condition.expand(shape)
-            x = torch.cat([x, condition], 1)
         x = self.conv2(x)
         x = self.conv3(x)
         x = self.conv4(x)
