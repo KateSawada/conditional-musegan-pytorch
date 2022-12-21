@@ -1,4 +1,5 @@
 import torch
+import torch.nn.functional as F
 
 
 class GeneraterBlock(torch.nn.Module):
@@ -204,4 +205,5 @@ class Encoder(torch.nn.Module):
         x = self.conv6(x)
         x = x.view(-1, 256)
         x = self.dense(x)
+        x = torch.sigmoid(x)
         return x
