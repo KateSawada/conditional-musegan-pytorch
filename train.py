@@ -95,14 +95,14 @@ def compute_gradient_penalty(discriminator, real_samples, fake_samples, conditio
 
 def train_one_step(d_optimizer, g_optimizer, real_samples,
                    generator, discriminator, batch_size, latent_dim, config,
-                   encoder=None):
+                   is_cuda, encoder=None):
     """Train the networks for one step."""
     # Sample from the lantent distribution
     latent = torch.randn(batch_size, latent_dim)
 
 
     # Transfer data to GPU
-    if torch.cuda.is_available():
+    if is_cuda:
         real_samples = real_samples.cuda()
         latent = latent.cuda()
 
@@ -133,11 +133,14 @@ def train_one_step(d_optimizer, g_optimizer, real_samples,
     # Backpropagate the gradients
     d_loss_real.backward()
 
+    # binarize tensor input to discriminator as fake
+    fake_sample_binarized = discretize(fake_samples.detach())
+
     # Get discriminator outputs for the fake samples
     if (conditioning):
-        prediction_fake_d = discriminator([fake_samples.detach(), condition])
+        prediction_fake_d = discriminator([fake_sample_binarized, condition])
     else:
-        prediction_fake_d = discriminator(fake_samples.detach())
+        prediction_fake_d = discriminator(fake_sample_binarized)
 
     # Compute the loss function
     # d_loss_fake = torch.mean(torch.nn.functional.relu(1. + prediction_fake_d))
@@ -192,6 +195,22 @@ def train_one_step(d_optimizer, g_optimizer, real_samples,
     g_optimizer.step()
 
     return d_loss_real + d_loss_fake, g_loss
+
+def discretize(x, threshold=0.5):
+    """discretize Tensor to 0/1 by thresholding.
+
+    Args:
+        x (torch.Tensor): tensor
+        threshold (int or float): threshold. default to 0.5
+
+    Returns:
+        torch.Tensor
+    """
+    threshold = torch.Tensor([threshold])
+    if x.is_cuda:
+        threshold = threshold.cuda()
+    discretized_x = (x > threshold).float()
+    return discretized_x
 
 def train(args, config):
     fix_seed(config.seed)
@@ -275,7 +294,8 @@ def train(args, config):
         encoder.load_state_dict(torch.load(conditioning_model_pth))
 
     # Transfer the neural nets and samples to GPU
-    if torch.cuda.is_available():
+    is_cuda = torch.cuda.is_available()
+    if is_cuda:
         discriminator = discriminator.cuda()
         discriminator = torch.nn.DataParallel(discriminator)
         generator = generator.cuda()
@@ -322,7 +342,7 @@ def train(args, config):
             d_loss, g_loss = train_one_step(
                 d_optimizer, g_optimizer, real_samples[0],
                 generator, discriminator, batch_size, latent_dim, config,
-                encoder)
+                is_cuda, encoder)
 
             # Record smoothened loss values to LiveLoss logger
             # if step > 0:
