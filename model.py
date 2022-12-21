@@ -77,6 +77,7 @@ class Generator(torch.nn.Module):
         x = [transconv(x) for transconv in self.transconv4]
         x = torch.cat([transconv(x_) for x_, transconv in zip(x, self.transconv5)], 1)
         x = x.view(-1, self.n_tracks, self.n_measures * self.measure_resolution, self.n_pitches)
+        x = torch.sigmoid(x)
         return x
 
 
@@ -205,5 +206,4 @@ class Encoder(torch.nn.Module):
         x = self.conv6(x)
         x = x.view(-1, 256)
         x = self.dense(x)
-        x = torch.sigmoid(x)
         return x
