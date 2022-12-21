@@ -152,12 +152,12 @@ def train_one_step(d_optimizer, g_optimizer, real_samples,
     # Backpropagate the gradients
     d_loss_fake.backward()
 
-    # Compute gradient penalty
-    gradient_penalty = 10.0 * compute_gradient_penalty(
-        discriminator, real_samples.data, fake_samples.data,
-        condition.data)
-    # Backpropagate the gradients
-    gradient_penalty.backward()
+    # # Compute gradient penalty
+    # gradient_penalty = 10.0 * compute_gradient_penalty(
+    #     discriminator, real_samples.data, fake_samples.data,
+    #     condition.data)
+    # # Backpropagate the gradients
+    # gradient_penalty.backward()
 
     if config.discriminator_grad_norm > 0:
             torch.nn.utils.clip_grad_norm_(
