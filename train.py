@@ -93,7 +93,7 @@ def compute_gradient_penalty(discriminator, real_samples, fake_samples, conditio
     return gradient_penalty
 
 def train_one_step(d_optimizer, g_optimizer, real_samples,
-                   generator, discriminator, batch_size, latent_dim,
+                   generator, discriminator, batch_size, latent_dim, config,
                    encoder=None):
     """Train the networks for one step."""
     # Sample from the lantent distribution
@@ -147,6 +147,12 @@ def train_one_step(d_optimizer, g_optimizer, real_samples,
     # Backpropagate the gradients
     gradient_penalty.backward()
 
+    if config.discriminator_grad_norm > 0:
+            torch.nn.utils.clip_grad_norm_(
+                discriminator.parameters(),
+                config.discriminator_grad_norm,
+            )
+
     # Update the weights
     d_optimizer.step()
 
@@ -162,6 +168,13 @@ def train_one_step(d_optimizer, g_optimizer, real_samples,
     g_loss = -torch.mean(prediction_fake_g)
     # Backpropagate the gradients
     g_loss.backward()
+
+    if config.generator_grad_norm > 0:
+            torch.nn.utils.clip_grad_norm_(
+                generator.parameters(),
+                config.generator_grad_norm,
+            )
+
     # Update the weights
     g_optimizer.step()
 
@@ -291,7 +304,8 @@ def train(args, config):
             generator.train()
             d_loss, g_loss = train_one_step(
                 d_optimizer, g_optimizer, real_samples[0],
-                generator, discriminator, batch_size, latent_dim, encoder)
+                generator, discriminator, batch_size, latent_dim, config,
+                encoder)
 
             # Record smoothened loss values to LiveLoss logger
             # if step > 0:
