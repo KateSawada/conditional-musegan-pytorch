@@ -183,7 +183,16 @@ def train_one_step(d_optimizer, g_optimizer, real_samples,
         g_loss = -prediction_fake_g.mean()
 
     # Backpropagate the gradients
-    g_loss.backward()
+    g_loss.backward(retain_graph=True)
+
+    if (config.g_reconstruct_loss == "BCE"):
+        g_recon_loss_func = torch.nn.BCELoss()
+    elif (config.g_reconstruct_loss == "L2"):
+        g_recon_loss_func = torch.nn.MSELoss()
+    elif (config.g_reconstruct_loss == "L1"):
+        g_recon_loss_func = torch.nn.L1Loss()
+    g_recon_loss = g_recon_loss_func(fake_samples, real_samples) * config.g_reconstruct_loss_weight
+    g_recon_loss.backward()
 
     if config.generator_grad_norm > 0:
             torch.nn.utils.clip_grad_norm_(
