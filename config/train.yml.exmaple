@@ -14,3 +14,5 @@ conditioning_model_pth:
 generator_grad_norm: 10
 discriminator_grad_norm: 10
 loss: "mse" # "mse" or "hinge"
+g_reconstruct_loss: "BCE" # "BCE", "L1" or "L2"
+g_reconstruct_loss_weight: 10.5
