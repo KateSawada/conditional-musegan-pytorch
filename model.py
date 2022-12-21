@@ -13,6 +13,17 @@ class GeneraterBlock(torch.nn.Module):
         x = self.batchnorm(x)
         return torch.nn.functional.relu(x)
 
+class FinalGeneraterBlock(torch.nn.Module):
+    def __init__(self, in_dim, out_dim, kernel, stride):
+        super().__init__()
+        self.transconv = torch.nn.ConvTranspose3d(in_dim, out_dim, kernel, stride)
+        self.batchnorm = torch.nn.BatchNorm3d(out_dim)
+
+    def forward(self, x):
+        x = self.transconv(x)
+        x = self.batchnorm(x)
+        return x
+
 
 def create_generator_from_config(config):
     n_tracks = config.n_tracks  # number of tracks
@@ -54,7 +65,7 @@ class Generator(torch.nn.Module):
             for _ in range(n_tracks)
         ])
         self.transconv5 = torch.nn.ModuleList([
-            GeneraterBlock(16, 1, (1, 1, 12), (1, 1, 12))
+            FinalGeneraterBlock(16, 1, (1, 1, 12), (1, 1, 12))
             for _ in range(n_tracks)
         ])
 
