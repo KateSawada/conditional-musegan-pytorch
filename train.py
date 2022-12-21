@@ -152,12 +152,12 @@ def train_one_step(d_optimizer, g_optimizer, real_samples,
     # Backpropagate the gradients
     d_loss_fake.backward()
 
-    # Compute gradient penalty
-    gradient_penalty = 10.0 * compute_gradient_penalty(
-        discriminator, real_samples.data, fake_samples.data,
-        condition.data)
-    # Backpropagate the gradients
-    gradient_penalty.backward()
+    # # Compute gradient penalty
+    # gradient_penalty = 10.0 * compute_gradient_penalty(
+    #     discriminator, real_samples.data, fake_samples.data,
+    #     condition.data)
+    # # Backpropagate the gradients
+    # gradient_penalty.backward()
 
     if config.discriminator_grad_norm > 0:
             torch.nn.utils.clip_grad_norm_(
@@ -183,7 +183,16 @@ def train_one_step(d_optimizer, g_optimizer, real_samples,
         g_loss = -prediction_fake_g.mean()
 
     # Backpropagate the gradients
-    g_loss.backward()
+    g_loss.backward(retain_graph=True)
+
+    if (config.g_reconstruct_loss == "BCE"):
+        g_recon_loss_func = torch.nn.BCELoss()
+    elif (config.g_reconstruct_loss == "L2"):
+        g_recon_loss_func = torch.nn.MSELoss()
+    elif (config.g_reconstruct_loss == "L1"):
+        g_recon_loss_func = torch.nn.L1Loss()
+    g_recon_loss = g_recon_loss_func(fake_samples, real_samples) * config.g_reconstruct_loss_weight
+    g_recon_loss.backward()
 
     if config.generator_grad_norm > 0:
             torch.nn.utils.clip_grad_norm_(
@@ -243,6 +252,10 @@ def train(args, config):
 
     assert config.loss in ["mse", "hinge"], (
         "loss must be in ['mse', 'hinge']"
+    )
+
+    assert config.g_reconstruct_loss in ['BCE', 'L1', 'L2'], (
+        "g_reconstruct_loss must be in ['BCE', 'L1', 'L2']"
     )
 
     dataset_root = Path("data/lpd_5/lpd_5_cleansed/")
