@@ -7,6 +7,7 @@ import datetime
 
 import numpy as np
 import torch
+import torch.nn.functional as F
 import pypianoroll
 from pypianoroll import Multitrack, Track
 from tqdm import tqdm
@@ -124,7 +125,11 @@ def train_one_step(d_optimizer, g_optimizer, real_samples,
         fake_samples = generator(latent)
     # Compute the loss function
     # d_loss_real = torch.mean(torch.nn.functional.relu(1. - prediction_real))
-    d_loss_real = -torch.mean(prediction_real)
+    if (config.loss == "mse"):
+        d_loss_real = F.mse_loss(prediction_real, prediction_real.new_ones(prediction_real.size()))
+    elif (config.loss == "hinge"):
+        d_loss_real = -torch.mean(torch.min(prediction_real - 1, prediction_real.new_zeros(prediction_real.size())))
+
     # Backpropagate the gradients
     d_loss_real.backward()
 
@@ -136,7 +141,11 @@ def train_one_step(d_optimizer, g_optimizer, real_samples,
 
     # Compute the loss function
     # d_loss_fake = torch.mean(torch.nn.functional.relu(1. + prediction_fake_d))
-    d_loss_fake = torch.mean(prediction_fake_d)
+    if (config.loss == "mse"):
+        d_loss_fake = F.mse_loss(prediction_fake_d, prediction_fake_d.new_zeros(prediction_fake_d.size()))
+    elif (config.loss == "hinge"):
+        d_loss_fake = -torch.mean(torch.min(-prediction_fake_d - 1, prediction_fake_d.new_zeros(prediction_fake_d.size())))
+
     # Backpropagate the gradients
     d_loss_fake.backward()
 
@@ -165,7 +174,11 @@ def train_one_step(d_optimizer, g_optimizer, real_samples,
     else:
         prediction_fake_g = discriminator(fake_samples)
     # Compute the loss function
-    g_loss = -torch.mean(prediction_fake_g)
+    if (config.loss == "mse"):
+        g_loss = F.mse_loss(prediction_fake_g, prediction_fake_g.new_ones(prediction_fake_g.size()))
+    elif (config.loss == "hinge"):
+        g_loss = -prediction_fake_g.mean()
+
     # Backpropagate the gradients
     g_loss.backward()
 
@@ -207,6 +220,10 @@ def train(args, config):
     )
     assert len(programs) == len(is_drums) and len(programs) == len(track_names), (
         "Lengths of programs, is_drums and track_names must be the same."
+    )
+
+    assert config.loss in ["mse", "hinge"], (
+        "loss must be in ['mse', 'hinge']"
     )
 
     dataset_root = Path("data/lpd_5/lpd_5_cleansed/")
