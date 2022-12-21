@@ -245,6 +245,10 @@ def train(args, config):
         "loss must be in ['mse', 'hinge']"
     )
 
+    assert config.g_reconstruct_loss in ['BCE', 'L1', 'L2'], (
+        "g_reconstruct_loss must be in ['BCE', 'L1', 'L2']"
+    )
+
     dataset_root = Path("data/lpd_5/lpd_5_cleansed/")
     id_list = []
     for path in os.listdir("data/amg"):
