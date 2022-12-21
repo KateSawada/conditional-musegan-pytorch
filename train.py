@@ -209,6 +209,10 @@ def train(args, config):
         "Lengths of programs, is_drums and track_names must be the same."
     )
 
+    assert config.loss in ["mse", "hinge"], (
+        "loss must be in ['mse', 'hinge']"
+    )
+
     dataset_root = Path("data/lpd_5/lpd_5_cleansed/")
     id_list = []
     for path in os.listdir("data/amg"):
