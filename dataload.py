@@ -173,4 +173,4 @@ def gene_dataloader(
     data = PiecesSet(songs_dict)
     loader = DataLoader(data, batch_size=batch, shuffle=shuffle)
 
-    return data, loader
+    return loader
