@@ -100,14 +100,15 @@ def train_one_step(d_optimizer, g_optimizer, real_samples,
     # Sample from the lantent distribution
     latent = torch.randn(batch_size, latent_dim)
 
+    d_conditioning = config.discriminator_conditioning
 
     # Transfer data to GPU
     if is_cuda:
         real_samples = real_samples.cuda()
         latent = latent.cuda()
 
-    conditioning = (encoder is not None)
-    if conditioning:
+    g_conditioning = (encoder is not None)
+    if g_conditioning:
         conditioning_dim = encoder.output_dim
         with torch.inference_mode():
             condition = encoder(real_samples)
@@ -115,14 +116,12 @@ def train_one_step(d_optimizer, g_optimizer, real_samples,
     # === Train the discriminator ===
     # Reset cached gradients to zero
     d_optimizer.zero_grad()
-    if (conditioning):
+    if (d_conditioning):
         # Get discriminator outputs for the real samples
         prediction_real = discriminator([real_samples, condition])
-        # Generate fake samples with the generator
-        fake_samples = generator([latent, condition])
     else:
         prediction_real = discriminator(real_samples)
-        fake_samples = generator(latent)
+
     # Compute the loss function
     # d_loss_real = torch.mean(torch.nn.functional.relu(1. - prediction_real))
     if (config.loss == "mse"):
@@ -133,11 +132,16 @@ def train_one_step(d_optimizer, g_optimizer, real_samples,
     # Backpropagate the gradients
     d_loss_real.backward()
 
+    if (g_conditioning):
+        # Generate fake samples with the generator
+        fake_samples = generator([latent, condition])
+    else:
+        fake_samples = generator(latent)
     # binarize tensor input to discriminator as fake
     fake_sample_binarized = discretize(fake_samples.detach())
 
     # Get discriminator outputs for the fake samples
-    if (conditioning):
+    if (d_conditioning):
         prediction_fake_d = discriminator([fake_sample_binarized, condition])
     else:
         prediction_fake_d = discriminator(fake_sample_binarized)
@@ -172,7 +176,7 @@ def train_one_step(d_optimizer, g_optimizer, real_samples,
     # Reset cached gradients to zero
     g_optimizer.zero_grad()
     # Get discriminator outputs for the fake samples
-    if (conditioning):
+    if (d_conditioning):
         prediction_fake_g = discriminator([fake_samples, condition])
     else:
         prediction_fake_g = discriminator(fake_samples)
@@ -281,7 +285,7 @@ def train(args, config):
         dataset, batch_size=batch_size, drop_last=True, shuffle=True)
 
     # Create neural networks
-    discriminator = Discriminator(n_tracks, n_measures, measure_resolution, n_pitches, config.conditioning, config.conditioning_dim)
+    discriminator = Discriminator(n_tracks, n_measures, measure_resolution, n_pitches, config.discriminator_conditioning, config.conditioning_dim)
     generator = create_generator_from_config(config)
     print("Number of parameters in G: {}".format(
         sum(p.numel() for p in generator.parameters() if p.requires_grad)))
