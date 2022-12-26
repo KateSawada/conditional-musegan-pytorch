@@ -18,6 +18,7 @@ from model import Discriminator, Encoder
 from custom import config
 from custom import get_argument_parser
 from fix_seed import fix_seed
+from dataload import gene_dataloader
 
 
 def msd_id_to_dirs(msd_id):
@@ -262,27 +263,7 @@ def train(args, config):
         "g_reconstruct_loss must be in ['BCE', 'L1', 'L2']"
     )
 
-    dataset_root = Path("data/lpd_5/lpd_5_cleansed/")
-    id_list = []
-    for path in os.listdir("data/amg"):
-        filepath = os.path.join("data/amg", path)
-        if os.path.isfile(filepath):
-            with open(filepath) as f:
-                id_list.extend([line.rstrip() for line in f])
-    id_list = list(set(id_list))
-
-    # load data
-    if (os.path.exists(config.train_data)):
-        data = np.load(config.train_data)
-    else:
-        data = load_data(id_list, dataset_root, beat_resolution, lowest_pitch,
-                    n_pitches, measure_resolution, n_measures,
-                    n_samples_per_song, config.train_data)
-
-    data = torch.as_tensor(data, dtype=torch.float32)
-    dataset = torch.utils.data.TensorDataset(data)
-    data_loader = torch.utils.data.DataLoader(
-        dataset, batch_size=batch_size, drop_last=True, shuffle=True)
+    data_loader = gene_dataloader(config.train_json, batch=batch_size, shuffle=True)
 
     # Create neural networks
     discriminator = Discriminator(n_tracks, n_measures, measure_resolution, n_pitches, config.discriminator_conditioning, config.conditioning_dim)
@@ -317,7 +298,6 @@ def train(args, config):
         discriminator = torch.nn.DataParallel(discriminator)
         generator = generator.cuda()
         generator = torch.nn.DataParallel(generator)
-        data = data.cuda()
         if conditioning:
             encoder = encoder.cuda()
     if (config.trained_g_model is not None):
