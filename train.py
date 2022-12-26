@@ -203,7 +203,7 @@ def train_one_step(d_optimizer, g_optimizer, real_samples,
     # Update the weights
     g_optimizer.step()
 
-    return d_loss_real + d_loss_fake, g_loss
+    return d_loss_real + d_loss_fake, g_loss, g_recon_loss
 
 def discretize(x, threshold=0.5):
     """discretize Tensor to 0/1 by thresholding.
@@ -352,7 +352,7 @@ def train(args, config):
         for real_samples in data_loader:
             # Train the neural networks
             generator.train()
-            d_loss, g_loss = train_one_step(
+            d_loss, g_loss, g_recon_loss = train_one_step(
                 d_optimizer, g_optimizer, real_samples[0],
                 generator, discriminator, batch_size, latent_dim, config,
                 is_cuda, encoder)
@@ -403,13 +403,14 @@ def train(args, config):
             #
             train_summary_writer.add_scalar("g_loss", g_loss, step)
             train_summary_writer.add_scalar("d_loss", d_loss, step)
+            train_summary_writer.add_scalar("g_recon_loss", g_recon_loss, step)
 
             if (step % 10000 == 0):
                 torch.save(generator.state_dict(), os.path.join(save_dir, f"generator-{step}.pth"))
                 torch.save(discriminator.state_dict(), os.path.join(save_dir, f"discriminator-{step}.pth"))
             step += 1
             progress_bar.update(1)
-            del d_loss, g_loss
+            del d_loss, g_loss, g_recon_loss
             if step >= n_steps:
                 break
     train_summary_writer.close()
