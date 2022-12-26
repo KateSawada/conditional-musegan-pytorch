@@ -11,6 +11,7 @@ conditioning_model_pth:
 # if you want to apply conditioning
 # conditioning_model: triplet
 # conditioning_model_pth: "ignore/conditioning/triplet/model600.pth"
+discriminator_conditioniing: True
 generator_grad_norm: 10
 discriminator_grad_norm: 10
 loss: "mse" # "mse" or "hinge"
