@@ -1,4 +1,7 @@
 seed: 0
+generate_json: "data/json/train_dict.json"  # or None
+conditioning_model: triplet
+conditioning_model_pth: "ignore/conditioning/triplet/dim64/model300.pth"
 n_samples: 4
 pth: model/generator-final.pth
 out_dir: model/out
