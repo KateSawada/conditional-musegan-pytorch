@@ -316,6 +316,7 @@ def train(args, config):
     current_time = datetime.datetime.now().strftime('%Y%m%d-%H%M%S')
     save_dir = os.path.join(args.model_dir, f"{config.experiment}-{current_time}")
     os.makedirs(save_dir)
+    config.save(save_dir)
     train_log_dir = os.path.join(save_dir, "train")
     # eval_log_dir = os.path.join(save_dir, "eval")
     train_summary_writer = SummaryWriter(train_log_dir)
