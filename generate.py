@@ -3,6 +3,8 @@ import os
 from operator import attrgetter
 from typing import TYPE_CHECKING, Dict, Optional, Union
 from copy import deepcopy
+import json
+import random
 
 import scipy.stats
 import numpy as np
@@ -13,7 +15,7 @@ from pypianoroll import Multitrack, Track, StandardTrack, BinaryTrack
 import pretty_midi
 from pretty_midi import Instrument, PrettyMIDI
 
-from model import create_generator_from_config
+from model import create_generator_from_config, Encoder
 from custom import config
 from custom import get_argument_parser
 from fix_seed import fix_seed
@@ -114,6 +116,19 @@ def generate(args, config):
     tempo = config.tempo
     measure_resolution = 4 * config.beat_resolution
 
+    if (config.generate_json):
+        with open(config.generate_json, "r") as f:
+            segments = json.load(f)
+        # print(segments)
+        # print(type(segments))
+
+        used_segments = random.sample(segments, config.n_samples)
+        segments = torch.from_numpy(np.array([np.load(file) for file in used_segments]).astype(np.float32))
+        encoder = Encoder(config.n_tracks, config.n_measures, measure_resolution, config.n_pitches,
+            config.conditioning_dim)
+        encoder.load_state_dict(torch.load(config.conditioning_model_pth))
+
+        conditions = encoder(segments)
 
     tempo_array = np.full((4 * 4 * measure_resolution, 1), tempo)
 
@@ -127,7 +142,9 @@ def generate(args, config):
     sample_latent = torch.randn(config.n_samples, config.latent_dim)
 
     generator.eval()
-    samples = generator(sample_latent).cpu().detach().numpy()
+
+    if (config.conditioning):
+        samples = generator([sample_latent, conditions]).cpu().detach().numpy()
 
     # Display generated samples
     samples = samples.transpose(1, 0, 2, 3).reshape(config.n_tracks, -1, config.n_pitches)
