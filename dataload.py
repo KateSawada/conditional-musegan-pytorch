@@ -171,6 +171,6 @@ def gene_dataloader(
     op = open(json_path, "r")
     songs_dict = json.load(op)
     data = PiecesSet(songs_dict)
-    loader = DataLoader(data, batch_size=batch, shuffle=shuffle)
+    loader = DataLoader(data, batch_size=batch, shuffle=shuffle, drop_last=True)
 
     return loader
