@@ -178,3 +178,4 @@ data.npy
 *.npz
 
 /ignore/
+exp_sotsuron_*
