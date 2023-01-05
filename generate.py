@@ -5,6 +5,7 @@ from typing import TYPE_CHECKING, Dict, Optional, Union
 from copy import deepcopy
 import json
 import random
+import subprocess
 
 import scipy.stats
 import numpy as np
@@ -97,7 +98,7 @@ def to_pretty_midi(
         for idx, pitch in enumerate(pitches):
             velocity = np.mean(clipped[note_ons[idx] : note_offs[idx], pitch])
             note = pretty_midi.Note(
-                velocity=int(velocity),
+                velocity=80,
                 pitch=pitch,
                 start=note_on_times[idx],
                 end=note_off_times[idx],
@@ -108,6 +109,10 @@ def to_pretty_midi(
         midi.instruments.append(instrument)
 
     return midi
+
+
+def midi_to_wav(midi_path:str, wav_path:str):
+    subprocess.run(["timidity", midi_path, "-Ow", wav_path])
 
 
 def generate(args, config):
@@ -187,13 +192,13 @@ def generate(args, config):
     os.makedirs(out_dir)
     config.save(out_dir)
     plt.savefig(os.path.join(out_dir, "pianoroll.png"))
-    plt.show()
+    # plt.show()
 
     to_pretty_midi(m).write(os.path.join(out_dir, "generated.mid"))
     # for i in range(config.n_tracks):
     #     pypianoroll.write(f"{i}.mid", tracks[i].standardize())
         # track = StandardTrack(program=config.program[i], is_drum=config.is_drum[i], pianoroll=samples[i])
-
+    midi_to_wav(os.path.join(out_dir, "generated.mid"), os.path.join(out_dir, "generated.wav"))
 
 
 if __name__ == "__main__":
