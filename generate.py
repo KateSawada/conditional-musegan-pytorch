@@ -121,8 +121,10 @@ def generate(args, config):
             segments = json.load(f)
         # print(segments)
         # print(type(segments))
-
-        used_segments = random.sample(segments, config.n_samples)
+        if (config.generate_random):
+            used_segments = random.sample(segments, config.n_samples)
+        else:
+            used_segments = segments
         segments = torch.from_numpy(np.array([np.load(file) for file in used_segments]).astype(np.float32))
         encoder = Encoder(config.n_tracks, config.n_measures, measure_resolution, config.n_pitches,
             config.conditioning_dim)
