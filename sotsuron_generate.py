@@ -19,9 +19,9 @@ def main():
         exp_name = f"d_conditioning_{dc}-conditioning_{i[1]}-latent_{i[2]}-adv_{i[3]}-g_recon_{i[4]}_{i[5]}"
 
         # ディレクトリがあれば生成実行
-        if (os.path.exists(f"model/{exp_name}_model")):
-            config.load("", [f"model/{exp_name}_model/save.yml"], initialize=True)
-
+        if (os.path.exists(f"model/sotsuron/{exp_name}_model")):
+            print(f"model/sotsuron/{exp_name}_model")
+            config.load("outputs/tmp", [f"model/sotsuron/{exp_name}_model/save.yml"], initialize=True)
             # generate用のconfigを作成
             config["seed"] = 0
             config["generate_json"] = "data/json/sotsuron_test.json"
@@ -29,7 +29,7 @@ def main():
             config["conditioning_model"] = "triplet"
             config["conditioning_model_pth"] = f"ignore/conditioning/triplet/tested/dim{i[1]}/model1000.pth"
             config["n_samples"] = 8
-            config["pth"] = f"model/{exp_name}_model/generator-final.pth"
+            config["pth"] = f"model/sotsuron/{exp_name}_model/generator-final.pth"
             config["out_dir"] = f"outputs/{exp_name}_model"
             generate.generate("", config)
 
