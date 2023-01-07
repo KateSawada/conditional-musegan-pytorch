@@ -1,5 +1,6 @@
 import yaml
 import itertools
+import argparse
 import os
 
 import generate
@@ -7,6 +8,10 @@ from custom import config
 
 
 def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("-g", "--genname", type=str, required=True,
+                        help="generate name(subdirectory name)")
+    args = parser.parse_args()
     d_conditioning = [True, False]
     conditioning_dim = [64, 128]
     latent_dim = [64, 128]
@@ -30,7 +35,7 @@ def main():
             config["conditioning_model_pth"] = f"ignore/conditioning/triplet/tested/dim{i[1]}/model1000.pth"
             config["n_samples"] = 8
             config["pth"] = f"model/sotsuron/{exp_name}_model/generator-final.pth"
-            config["out_dir"] = f"outputs/{exp_name}_model"
+            config["out_dir"] = f"outputs/{exp_name}_model/{args.genname}"
             generate.generate("", config)
 
 
