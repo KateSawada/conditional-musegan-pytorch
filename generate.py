@@ -199,7 +199,7 @@ def generate(args, config):
     #     pypianoroll.write(f"{i}.mid", tracks[i].standardize())
         # track = StandardTrack(program=config.program[i], is_drum=config.is_drum[i], pianoroll=samples[i])
     midi_to_wav(os.path.join(out_dir, "generated.mid"), os.path.join(out_dir, "generated.wav"))
-
+    np.save(os.path.join(out_dir, "generated.npy"), samples)
 
 if __name__ == "__main__":
     parser = get_argument_parser()
