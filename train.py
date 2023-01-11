@@ -4,6 +4,7 @@ import random
 from pathlib import Path
 import argparse
 import datetime
+from collections import defaultdict
 
 import numpy as np
 import torch
@@ -98,6 +99,9 @@ def train_one_step(d_optimizer, g_optimizer, real_samples,
                    generator, discriminator, batch_size, latent_dim, config,
                    is_cuda, encoder=None):
     """Train the networks for one step."""
+    # initialize loss metrics dict
+    loss_dict = defaultdict(float)
+
     # Sample from the lantent distribution
     latent = torch.randn(batch_size, latent_dim)
 
@@ -114,101 +118,108 @@ def train_one_step(d_optimizer, g_optimizer, real_samples,
         with torch.inference_mode():
             condition = encoder(real_samples)
 
-    # === Train the discriminator ===
-    # Reset cached gradients to zero
-    d_optimizer.zero_grad()
-    if (d_conditioning):
-        # Get discriminator outputs for the real samples
-        prediction_real = discriminator([real_samples, condition])
-    else:
-        prediction_real = discriminator(real_samples)
-
-    # Compute the loss function
-    # d_loss_real = torch.mean(torch.nn.functional.relu(1. - prediction_real))
-    if (config.loss == "mse"):
-        d_loss_real = F.mse_loss(prediction_real, prediction_real.new_ones(prediction_real.size()))
-    elif (config.loss == "hinge"):
-        d_loss_real = -torch.mean(torch.min(prediction_real - 1, prediction_real.new_zeros(prediction_real.size())))
-
-    # Backpropagate the gradients
-    d_loss_real.backward()
-
+    # Generate fake samples with the generator
     if (g_conditioning):
-        # Generate fake samples with the generator
         fake_samples = generator([latent, condition])
     else:
         fake_samples = generator(latent)
     # binarize tensor input to discriminator as fake
     fake_sample_binarized = discretize(fake_samples.detach())
 
+    # === Train the generator ===
+    # pianoroll reconstruct loss
+    if (config.g_pianoroll_reconstruct_loss == "BCE"):
+        g_pianoroll_recon_loss_func = torch.nn.BCELoss()
+    elif (config.g_pianoroll_reconstruct_loss == "L2"):
+        g_pianoroll_recon_loss_func = torch.nn.MSELoss()
+    elif (config.g_pianoroll_reconstruct_loss == "L1"):
+        g_pianoroll_recon_loss_func = torch.nn.L1Loss()
+    g_pianoroll_recon_loss = g_pianoroll_recon_loss_func(fake_samples, real_samples)
+    loss_dict["g_pianoroll_recon_loss"] = g_pianoroll_recon_loss.item()
+    # g_recon_loss.backward()
+
+    # embedding reconstruct loss
+    if (config.g_embedding_reconstruct_loss == "L2"):
+        g_embedding_recon_loss_func = torch.nn.MSELoss()
+    elif (config.g_embedding_reconstruct_loss == "L1"):
+        g_embedding_recon_loss_func = torch.nn.L1Loss()
+    with torch.inference_mode():
+            fake_samples_embedding = encoder(fake_samples)
+    g_embedding_recon_loss = g_embedding_recon_loss_func(fake_samples_embedding, condition)
+    loss_dict["g_embedding_recon_loss"] = g_embedding_recon_loss.item()
+
     # Get discriminator outputs for the fake samples
+    with torch.no_grad():
+        if (d_conditioning):
+            prediction_fake_g = discriminator([fake_samples, condition])
+        else:
+            prediction_fake_g = discriminator(fake_samples)
+    # discriminator related loss
+    if (config.loss == "mse"):
+        g_adv_loss = F.mse_loss(prediction_fake_g, prediction_fake_g.new_ones(prediction_fake_g.size()))
+    elif (config.loss == "hinge"):
+        g_adv_loss = -prediction_fake_g.mean()
+    loss_dict["g_adv_loss"] = g_adv_loss.item()
+
+    # sum generator loss
+    g_loss = g_pianoroll_recon_loss * config.g_pianoroll_reconstruct_loss_weight + g_embedding_recon_loss * config.g_embedding_reconstruct_loss_weight + g_adv_loss
+    loss_dict["g_loss"] = g_loss.item()
+
+    # Reset cached gradients to zero
+    g_optimizer.zero_grad()
+    # backward and grad_clip
+    g_loss.backward()
+    if config.generator_grad_norm > 0:
+        torch.nn.utils.clip_grad_norm_(
+            generator.parameters(),
+            config.generator_grad_norm,
+        )
+    # Update the weights
+    g_optimizer.step()
+
+    # === Train the discriminator ===
+    # Re-Generate fake samples with the generator
+    with torch.no_grad():
+        if (g_conditioning):
+            fake_samples = generator([latent, condition])
+        else:
+            fake_samples = generator(latent)
+
     if (d_conditioning):
+        # Get discriminator outputs for the fake samples
         prediction_fake_d = discriminator([fake_sample_binarized, condition])
+        # Get discriminator outputs for the real samples
+        prediction_real = discriminator([real_samples, condition])
     else:
         prediction_fake_d = discriminator(fake_sample_binarized)
-
+        prediction_real = discriminator(real_samples)
     # Compute the loss function
-    # d_loss_fake = torch.mean(torch.nn.functional.relu(1. + prediction_fake_d))
     if (config.loss == "mse"):
+        d_loss_real = F.mse_loss(prediction_real, prediction_real.new_ones(prediction_real.size()))
         d_loss_fake = F.mse_loss(prediction_fake_d, prediction_fake_d.new_zeros(prediction_fake_d.size()))
     elif (config.loss == "hinge"):
+        d_loss_real = -torch.mean(torch.min(prediction_real - 1, prediction_real.new_zeros(prediction_real.size())))
         d_loss_fake = -torch.mean(torch.min(-prediction_fake_d - 1, prediction_fake_d.new_zeros(prediction_fake_d.size())))
+    loss_dict["d_loss_real"] = d_loss_real.item()
+    loss_dict["d_loss_fake"] = d_loss_fake.item()
 
+    # sum discriminator loss
+    d_loss = d_loss_fake + d_loss_real
+    loss_dict["d_loss"] = d_loss.item()
+
+    # Reset cached gradients to zero
+    d_optimizer.zero_grad()
     # Backpropagate the gradients
-    d_loss_fake.backward()
-
-    # # Compute gradient penalty
-    # gradient_penalty = 10.0 * compute_gradient_penalty(
-    #     discriminator, real_samples.data, fake_samples.data,
-    #     condition.data)
-    # # Backpropagate the gradients
-    # gradient_penalty.backward()
-
+    d_loss.backward()
     if config.discriminator_grad_norm > 0:
             torch.nn.utils.clip_grad_norm_(
                 discriminator.parameters(),
                 config.discriminator_grad_norm,
             )
-
     # Update the weights
     d_optimizer.step()
 
-    # === Train the generator ===
-    # Reset cached gradients to zero
-    g_optimizer.zero_grad()
-    # Get discriminator outputs for the fake samples
-    if (d_conditioning):
-        prediction_fake_g = discriminator([fake_samples, condition])
-    else:
-        prediction_fake_g = discriminator(fake_samples)
-    # Compute the loss function
-    if (config.loss == "mse"):
-        g_loss = F.mse_loss(prediction_fake_g, prediction_fake_g.new_ones(prediction_fake_g.size()))
-    elif (config.loss == "hinge"):
-        g_loss = -prediction_fake_g.mean()
-
-    # Backpropagate the gradients
-    g_loss.backward(retain_graph=True)
-
-    if (config.g_reconstruct_loss == "BCE"):
-        g_recon_loss_func = torch.nn.BCELoss()
-    elif (config.g_reconstruct_loss == "L2"):
-        g_recon_loss_func = torch.nn.MSELoss()
-    elif (config.g_reconstruct_loss == "L1"):
-        g_recon_loss_func = torch.nn.L1Loss()
-    g_recon_loss = g_recon_loss_func(fake_samples, real_samples) * config.g_reconstruct_loss_weight
-    g_recon_loss.backward()
-
-    if config.generator_grad_norm > 0:
-            torch.nn.utils.clip_grad_norm_(
-                generator.parameters(),
-                config.generator_grad_norm,
-            )
-
-    # Update the weights
-    g_optimizer.step()
-
-    return d_loss_real + d_loss_fake, g_loss, g_recon_loss
+    return loss_dict
 
 def discretize(x, threshold=0.5):
     """discretize Tensor to 0/1 by thresholding.
@@ -259,8 +270,11 @@ def train(args, config):
         "loss must be in ['mse', 'hinge']"
     )
 
-    assert config.g_reconstruct_loss in ['BCE', 'L1', 'L2'], (
-        "g_reconstruct_loss must be in ['BCE', 'L1', 'L2']"
+    assert config.g_pianoroll_reconstruct_loss in ['BCE', 'L1', 'L2'], (
+        "g_pianoroll_reconstruct_loss must be in ['BCE', 'L1', 'L2']"
+    )
+    assert config.g_embedding_reconstruct_loss in ['L1', 'L2'], (
+        "g_embedding_reconstruct_loss must be in ['L1', 'L2']"
     )
 
     data_loader = gene_dataloader(config.train_json, batch=batch_size, shuffle=True)
@@ -337,7 +351,7 @@ def train(args, config):
         for real_samples in data_loader:
             # Train the neural networks
             generator.train()
-            d_loss, g_loss, g_recon_loss = train_one_step(
+            loss_dict = train_one_step(
                 d_optimizer, g_optimizer, real_samples[0],
                 generator, discriminator, batch_size, latent_dim, config,
                 is_cuda, encoder)
@@ -353,7 +367,7 @@ def train(args, config):
 
             # Update losses to progress bar
             progress_bar.set_description_str(
-                "(d_loss={: 8.6f}, g_loss={: 8.6f})".format(d_loss, g_loss))
+                "(d_loss={: 8.6f}, g_loss={: 8.6f})".format(loss_dict["d_loss"], loss_dict["g_loss"]))
 
             #
             # if step % sample_interval == 0:
@@ -386,16 +400,16 @@ def train(args, config):
             #             )
             #         )
             #
-            train_summary_writer.add_scalar("g_loss", g_loss, step)
-            train_summary_writer.add_scalar("d_loss", d_loss, step)
-            train_summary_writer.add_scalar("g_recon_loss", g_recon_loss, step)
+
+            # write to tensorboard
+            for key, value in loss_dict.items():
+                train_summary_writer.add_scalar(key, value, step)
 
             if (step % 10000 == 0):
                 torch.save(generator.state_dict(), os.path.join(save_dir, f"generator-{step}.pth"))
                 torch.save(discriminator.state_dict(), os.path.join(save_dir, f"discriminator-{step}.pth"))
             step += 1
             progress_bar.update(1)
-            del d_loss, g_loss, g_recon_loss
             if step >= n_steps:
                 break
     train_summary_writer.close()
