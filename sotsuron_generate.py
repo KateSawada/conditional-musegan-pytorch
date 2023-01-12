@@ -11,6 +11,8 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("-g", "--genname", type=str, required=True,
                         help="generate name(subdirectory name)")
+    parser.add_argument("-c", "--checkpoint", type=str, required=True,
+                        help="checkpoint filename. ex) --checkpoint generator-20000.pth")
     args = parser.parse_args()
     d_conditioning = [True, False]
     conditioning_dim = [64, 128]
@@ -28,14 +30,14 @@ def main():
             print(f"model/sotsuron/{exp_name}_model")
             config.load("outputs/tmp", [f"model/sotsuron/{exp_name}_model/save.yml"], initialize=True)
             # generate用のconfigを作成
-            config["seed"] = 0
+            config["seed"] = 1
             config["generate_json"] = "data/json/sotsuron_test.json"
             config["generate_random"] = False
             config["conditioning_model"] = "triplet"
             config["conditioning_model_pth"] = f"ignore/conditioning/triplet/tested/dim{i[1]}/model1000.pth"
             config["n_samples"] = 8
-            config["pth"] = f"model/sotsuron/{exp_name}_model/generator-final.pth"
-            config["out_dir"] = f"outputs/{exp_name}_model/{args.genname}"
+            config["pth"] = f"model/sotsuron/{exp_name}_model/{args.checkpoint}"
+            config["out_dir"] = f"outputs/sotsuron/generated/{exp_name}_model/{args.genname}"
             generate.generate("", config)
 
 
