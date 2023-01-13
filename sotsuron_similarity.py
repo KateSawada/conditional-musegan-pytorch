@@ -126,6 +126,11 @@ def main():
     for i in range(len(conditioning_dim)):
         for j in range(len(latent_dim)):
             data_ = data[conditioning_dim[i]][latent_dim[j]]
+            print(f"-- c {conditioning_dim[i]} l {latent_dim[j]} --")
+            print(f"{data_.max(axis=0)}")
+            print(f"{data_.min(axis=0)}")
+            print(f"{data_.mean(axis=0)}")
+            print(f"{data_.std(axis=0)}")
             # 次元圧縮
             t_sne_metrics = TSNE(n_components=2, random_state=0).fit_transform(np.vstack((data_, reference_embeddings[conditioning_dim[i]])))
 
