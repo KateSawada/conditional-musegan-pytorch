@@ -6,6 +6,7 @@ import glob
 
 import numpy as np
 import torch
+from torch.nn.functional import normalize
 import matplotlib.pyplot as plt
 from sklearn.manifold import TSNE
 
@@ -116,7 +117,7 @@ def main():
 
         # encode
         for j in range(0, sample_npy.shape[1], sample_timesteps):
-            embedded = encoders[i[1]](torch.from_numpy(sample_npy[:, j : j + sample_timesteps, :]))
+            embedded = normalize(encoders[i[1]](torch.from_numpy(sample_npy[:, j : j + sample_timesteps, :])))
 
             data[i[1]][i[2]] = np.vstack((data[i[1]][i[2]], embedded.to("cpu").detach().numpy().copy()))
 
@@ -149,7 +150,7 @@ def main():
                     color="black", marker=songs_markers[s], label="reference")
             axs[i, j].legend()
             # axs[i, j].set_facecolor("none")
-
+    # plt.savefig("outputs/sotsuron/figs/gen_and_ref_embeddings_normalized.png")
     plt.show()
 
 if __name__ == '__main__':
