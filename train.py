@@ -116,7 +116,7 @@ def train_one_step(d_optimizer, g_optimizer, real_samples,
     if g_conditioning:
         conditioning_dim = encoder.output_dim
         with torch.inference_mode():
-            condition = encoder(real_samples)
+            condition = F.normalize(encoder(real_samples))
 
     # Generate fake samples with the generator
     if (g_conditioning):
@@ -144,7 +144,7 @@ def train_one_step(d_optimizer, g_optimizer, real_samples,
     elif (config.g_embedding_reconstruct_loss == "L1"):
         g_embedding_recon_loss_func = torch.nn.L1Loss()
     with torch.inference_mode():
-            fake_samples_embedding = encoder(fake_samples)
+            fake_samples_embedding = F.normalize(encoder(fake_samples))
     g_embedding_recon_loss = g_embedding_recon_loss_func(fake_samples_embedding, condition)
     loss_dict["g_embedding_recon_loss"] = g_embedding_recon_loss.item()
 
