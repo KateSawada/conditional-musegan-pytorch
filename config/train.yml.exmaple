@@ -18,5 +18,5 @@ discriminator_grad_norm: 10
 loss: "mse" # "mse" or "hinge"
 g_pianoroll_reconstruct_loss: "BCE" # "BCE", "L1" or "L2"
 g_pianoroll_reconstruct_loss_weight: 10.5
-g_embedding_reconstruct_loss: "L2" # "L1" or "L2"
+g_embedding_reconstruct_loss: "COS" # "COS" のみ対応
 g_embedding_reconstruct_loss_weight: 10.5
