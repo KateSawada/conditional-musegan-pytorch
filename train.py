@@ -139,12 +139,14 @@ def train_one_step(d_optimizer, g_optimizer, real_samples,
     # g_recon_loss.backward()
 
     # embedding reconstruct loss
-    if (config.g_embedding_reconstruct_loss == "L2"):
-        g_embedding_recon_loss_func = torch.nn.MSELoss()
-    elif (config.g_embedding_reconstruct_loss == "L1"):
-        g_embedding_recon_loss_func = torch.nn.L1Loss()
+    if (config.g_embedding_reconstruct_loss == "COS"):
+        g_embedding_recon_loss_func = F.cosine_similarity
+    # if (config.g_embedding_reconstruct_loss == "L2"):
+    #     g_embedding_recon_loss_func = torch.nn.MSELoss()
+    # elif (config.g_embedding_reconstruct_loss == "L1"):
+    #     g_embedding_recon_loss_func = torch.nn.L1Loss()
     with torch.inference_mode():
-            fake_samples_embedding = F.normalize(encoder(fake_samples))
+            fake_samples_embedding = encoder(fake_samples)
     g_embedding_recon_loss = g_embedding_recon_loss_func(fake_samples_embedding, condition)
     loss_dict["g_embedding_recon_loss"] = g_embedding_recon_loss.item()
 
