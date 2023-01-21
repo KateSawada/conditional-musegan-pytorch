@@ -275,8 +275,8 @@ def train(args, config):
     assert config.g_pianoroll_reconstruct_loss in ['BCE', 'L1', 'L2'], (
         "g_pianoroll_reconstruct_loss must be in ['BCE', 'L1', 'L2']"
     )
-    assert config.g_embedding_reconstruct_loss in ['L1', 'L2'], (
-        "g_embedding_reconstruct_loss must be in ['L1', 'L2']"
+    assert config.g_embedding_reconstruct_loss in ['COS'], (
+        "g_embedding_reconstruct_loss must be in ['COS']"
     )
 
     data_loader = gene_dataloader(config.train_json, batch=batch_size, shuffle=True)
