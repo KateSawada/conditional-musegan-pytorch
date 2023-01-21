@@ -147,7 +147,7 @@ def train_one_step(d_optimizer, g_optimizer, real_samples,
     #     g_embedding_recon_loss_func = torch.nn.L1Loss()
     with torch.inference_mode():
             fake_samples_embedding = encoder(fake_samples)
-    g_embedding_recon_loss = g_embedding_recon_loss_func(fake_samples_embedding, condition)
+    g_embedding_recon_loss = g_embedding_recon_loss_func(fake_samples_embedding, condition).mean()
     loss_dict["g_embedding_recon_loss"] = g_embedding_recon_loss.item()
 
     # Get discriminator outputs for the fake samples
