@@ -141,45 +141,64 @@ class Discriminator(torch.nn.Module):
         self.conditioning = conditioning
         self.conditioning_dim = conditioning_dim
         super().__init__()
-        self.conv0 = torch.nn.ModuleList([
+        # pitch-time private
+        self.pitch_time_p_0 = torch.nn.ModuleList([
             DiscriminatorBlock(1, 16, (1, 1, 12), (1, 1, 12)) for _ in range(n_tracks)
         ])
-        self.conv1 = torch.nn.ModuleList([
-            DiscriminatorBlock(16, 16, (1, 4, 1), (1, 4, 1)) for _ in range(n_tracks)
+        self.pitch_time_p_1 = torch.nn.ModuleList([
+            DiscriminatorBlock(16, 32, (1, 4, 1), (1, 4, 1)) for _ in range(n_tracks)
         ])
-        if (self.conditioning):
-            # add conditioning in conv2
-            self.conv2 = DiscriminatorBlock(16 * n_tracks + self.conditioning_dim, 64, (1, 1, 3), (1, 1, 1))
-        else:
-            self.conv2 = DiscriminatorBlock(16 * n_tracks, 64, (1, 1, 3), (1, 1, 1))
-        self.conv3 = DiscriminatorBlock(64, 64, (1, 1, 4), (1, 1, 4))
-        self.conv4 = DiscriminatorBlock(64, 128, (1, 4, 1), (1, 4, 1))
-        self.conv5 = DiscriminatorBlock(128, 128, (2, 1, 1), (1, 1, 1))
-        self.conv6 = DiscriminatorBlock(128, 256, (3, 1, 1), (3, 1, 1))
-        self.dense = torch.nn.Linear(256, 1)
+
+        # time-pitch private
+        self.time_pitch_p_0 = torch.nn.ModuleList([
+            DiscriminatorBlock(1, 16, (1, 4, 1), (1, 4, 1)) for _ in range(n_tracks)
+        ])
+        self.time_pitch_p_1 = torch.nn.ModuleList([
+            DiscriminatorBlock(16, 32, (1, 1, 12), (1, 1, 12)) for _ in range(n_tracks)
+        ])
+
+        # merged private
+        self.merged_p = torch.nn.ModuleList([
+            DiscriminatorBlock(64, 64, (1, 1, 1), (1, 1, 1)) for _ in range(n_tracks)
+        ])
+        # h: 64 filters, 4 x 4 x 7
+
+        # shared
+        self.shared_0 = DiscriminatorBlock(64 * n_tracks, 128, (1, 2, 3), (1, 2, 1))
+        self.shared_1 = DiscriminatorBlock(128, 256, (1, 2, 4), (1, 2, 4))
+
+        # all merge
+        self.all_merge0 = DiscriminatorBlock(256, 512, (2, 1, 1), (1, 1, 1))  # (3, 1, 1)
+        self.all_merge1 = DiscriminatorBlock(512, 512, (3, 1, 1), (1, 1, 1))
+        self.dense = torch.nn.Linear(512, 1)
 
     def forward(self, x):
-        # conditioning
-        if (self.conditioning):
-            x, condition = x
         x = x.view(-1, self.n_tracks, self.n_measures, self.measure_resolution, self.n_pitches)
-        x = [conv(x[:, [i]]) for i, conv in enumerate(self.conv0)]
-        x = torch.cat([conv(x_) for x_, conv in zip(x, self.conv1)], 1)
-        if (self.conditioning):
-            condition = condition.view(-1, self.conditioning_dim, 1, 1, 1)
-            shape = list(x.shape)
-            shape[1] = self.conditioning_dim
-            # match shape of x and condition excluding dim 1
-            condition = condition.expand(shape)
-            x = torch.cat([x, condition], 1)
-        x = self.conv2(x)
-        x = self.conv3(x)
-        x = self.conv4(x)
-        x = self.conv5(x)
-        x = self.conv6(x)
-        x = x.view(-1, 256)
-        x = self.dense(x)
-        return x
+        pt_out = [conv(x[:, [i]]) for i, conv in enumerate(self.pitch_time_p_0)]
+        pt_out = [conv(x_) for x_, conv in zip(pt_out, self.pitch_time_p_1)]
+        tp_out = [conv(x[:, [i]]) for i, conv in enumerate(self.time_pitch_p_0)]
+        tp_out = [conv(x_) for x_, conv in zip(tp_out, self.time_pitch_p_1)]
+
+        h = [torch.cat([pt_out[i], tp_out[i]], 1) for i in range(self.n_tracks)]
+
+        # merged private
+        h = [conv(h[i]) for i, conv in enumerate(self.merged_p)]
+        # h: [64 filters, 4 x 4 x 7], n_tracks
+
+        h = torch.cat(h, 1)
+        # h: 64 filters, 4 x 4 x 7
+
+        # shared
+        h = self.shared_0(h)
+        h = self.shared_1(h)
+
+        # all merge
+        h = self.all_merge0(h)
+        h = self.all_merge1(h)
+
+        h = h.view(-1, 512)
+        h = self.dense(h)
+        return h
 
 
 class Encoder(torch.nn.Module):
