@@ -140,6 +140,7 @@ class Discriminator(torch.nn.Module):
         self.n_pitches = n_pitches
         self.conditioning = conditioning
         self.conditioning_dim = conditioning_dim
+        self.n_beats = 4
         super().__init__()
         # pitch-time private
         self.pitch_time_p_0 = torch.nn.ModuleList([
@@ -167,13 +168,37 @@ class Discriminator(torch.nn.Module):
         self.shared_0 = DiscriminatorBlock(64 * n_tracks, 128, (1, 2, 3), (1, 2, 1))
         self.shared_1 = DiscriminatorBlock(128, 256, (1, 2, 4), (1, 2, 4))
 
+        # chroma
+        self.chroma_0 = DiscriminatorBlock(self.n_tracks, 32, (1, 1, 12), (1, 1, 12))  # (4, 4, 1)
+        self.chroma_1 = DiscriminatorBlock(32, 64, (1, 4, 1), (1, 4, 1))  # (4, 1, 1)
+
+        # on-off set
+        self.on_off_0 = DiscriminatorBlock(self.n_tracks, 32, (1, 4, 1), (1, 4, 1))  # (4, 4, 1)
+        self.on_off_1 = DiscriminatorBlock(32, 64, (1, 4, 1), (1, 4, 1))  # (4, 1, 1)
+
         # all merge
-        self.all_merge0 = DiscriminatorBlock(256, 512, (2, 1, 1), (1, 1, 1))  # (3, 1, 1)
-        self.all_merge1 = DiscriminatorBlock(512, 512, (3, 1, 1), (1, 1, 1))
+        self.all_merge0 = DiscriminatorBlock(384, 512, (2, 1, 1), (1, 1, 1))  # (3, 1, 1)
         self.dense = torch.nn.Linear(512, 1)
 
     def forward(self, x):
         x = x.view(-1, self.n_tracks, self.n_measures, self.measure_resolution, self.n_pitches)
+
+        # chroma
+        reshaped = x.view(-1, self.n_tracks, self.n_measures, self.n_beats, self.measure_resolution // self.n_beats, self.n_pitches)
+        summed = torch.sum(reshaped, 4)
+        factor = self.n_pitches // 12
+        reminder = self.n_pitches % 12
+
+        reshaped = summed[..., :factor * 12].view(-1, self.n_tracks, self.n_measures, self.n_beats, factor, 12)
+        chroma = torch.sum(reshaped, 4)
+        if reminder:
+            chroma += summed[..., -reminder:]
+
+        # on/off set
+        padded = F.pad(x[:, :, :, :-1], (0, 0, 1, 0), mode='constant', value=0)
+        on_off_set = torch.sum(x - padded, 4, True)
+
+
         pt_out = [conv(x[:, [i]]) for i, conv in enumerate(self.pitch_time_p_0)]
         pt_out = [conv(x_) for x_, conv in zip(pt_out, self.pitch_time_p_1)]
         tp_out = [conv(x[:, [i]]) for i, conv in enumerate(self.time_pitch_p_0)]
@@ -192,9 +217,18 @@ class Discriminator(torch.nn.Module):
         h = self.shared_0(h)
         h = self.shared_1(h)
 
+        # chroma
+        c = self.chroma_0(chroma)
+        c = self.chroma_1(c)
+
+        # on/off
+        o = self.on_off_0(on_off_set)
+        o = self.on_off_1(o)
+
+        h = torch.cat([h, c, o], 1)
+
         # all merge
         h = self.all_merge0(h)
-        h = self.all_merge1(h)
 
         h = h.view(-1, 512)
         h = self.dense(h)
