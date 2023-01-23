@@ -41,8 +41,12 @@ def create_generator_from_config(config):
 
 
 def cat_cond(x, c):
-        return torch.cat([x, c], 1)
+    # print(x.shape)
+    # print(c.shape)
+    return torch.cat([x, c], 1)
 
+def add_3axis(x):
+    return x.unsqueeze(-1).unsqueeze(-1).unsqueeze(-1)
 
 class Generator(torch.nn.Module):
     """A convolutional neural network (CNN) based generator. The generator takes
@@ -62,7 +66,7 @@ class Generator(torch.nn.Module):
         """
         # example
         conditioning_dim = {
-            "shared0": 256
+            "shared0": 256,
             "shared1": 128,
             "shared2": 64,
             "pt0": 32,
@@ -89,7 +93,7 @@ class Generator(torch.nn.Module):
 
         # time-pitch
         self.tp0 = torch.nn.ModuleList([
-            GeneraterBlock(128 + conditioning_dim["tp0"], 32, (1, 4, 1), (1, 4, 1))  # 4, 16, 72
+            GeneraterBlock(128 + conditioning_dim["tp0"], 32, (1, 4, 1), (1, 4, 1))  # 4, 16, 6
             for _ in range(n_tracks)
         ])
         self.tp1 = torch.nn.ModuleList([
@@ -99,27 +103,31 @@ class Generator(torch.nn.Module):
 
         # merged private
         self.merged = torch.nn.ModuleList([
-            FinalGeneraterBlock(16 * self.n_tracks, 1, (1, 1, 1), (1, 1, 1))  # 4, 16, 72
+            FinalGeneraterBlock(32, 1, (1, 1, 1), (1, 1, 1))  # 4, 16, 72
             for _ in range(n_tracks)
         ])
 
     def forward(self, x, conditions):
-        x = self.shared0(cat_cond(x, conditions["shared0"]))
+        x = add_3axis(x)
+        x = self.shared0(cat_cond(x, add_3axis(conditions["shared0"])))
         x = self.shared1(cat_cond(x, conditions["shared1"]))
         x = self.shared2(cat_cond(x, conditions["shared2"]))
 
-        # TODO: ここ以降のconditions
         # pitch-time
-        pt = [pt_(x) for pt_ in self.pt0]
-        pt = [pt_(pt) for pt_ in self.pt1]
+        pt = [self.pt0[i](cat_cond(x, conditions["pt0"][i])) for i in range(self.n_tracks)]
+        pt = [self.pt1[i](cat_cond(pt[i], conditions["pt1"][i])) for i in range(self.n_tracks)]
 
         # time-pitch
-        tp = [tp_(x) for tp_ in self.tp0]
-        tp = [tp_(tp) for tp_ in self.tp1]
+        tp = [self.tp0[i](cat_cond(x, conditions["tp0"][i])) for i in range(self.n_tracks)]
+        tp = [self.tp1[i](cat_cond(tp[i], conditions["tp1"][i])) for i in range(self.n_tracks)]
 
         x = [torch.cat([pt[i], tp[i]], 1) for i in range(self.n_tracks)]
 
-        x = self.merged(x)
+
+
+        x = [self.merged[i](x[i]) for i in range(self.n_tracks)]
+
+
         x = torch.cat(x, 1)
         return torch.tanh(x)
 
@@ -306,30 +314,30 @@ class Encoder(torch.nn.Module):
         tp_out = [conv(x[:, [i]]) for i, conv in enumerate(self.time_pitch_p_0)]
         if (return_values):
             values = {
-                "pt0": pt_out,
-                "tp0": tp_out,
+                "tp1": pt_out,  # name is associated with generator input
+                "pt1": tp_out,
             }
 
         pt_out = [conv(x_) for x_, conv in zip(pt_out, self.pitch_time_p_1)]
         tp_out = [conv(x_) for x_, conv in zip(tp_out, self.time_pitch_p_1)]
 
         if (return_values):
-            values["pt1"] = pt_out
-            values["tp1"] = tp_out
+            values["tp0"] = pt_out
+            values["pt0"] = tp_out
 
         s0 = [torch.cat([pt_out[i], tp_out[i]], 1) for i in range(self.n_tracks)]
         s0 = torch.cat(s0, 1)
 
         s0 = self.shared_0(s0)
         if (return_values):
-            values["shared0"] = s0
+            values["shared2"] = s0
         s0 = self.shared_1(s0)
         if (return_values):
             values["shared1"] = s0
         s0 = self.shared_2(s0)
         s0 = s0.view(-1, 256)
         if (return_values):
-            values["shared2"] = s0
+            values["shared0"] = s0
 
 
         if (return_values):
