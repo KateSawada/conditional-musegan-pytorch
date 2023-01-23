@@ -40,12 +40,17 @@ def create_generator_from_config(config):
     return generator
 
 
+def cat_cond(x, c):
+        return torch.cat([x, c], 1)
+
+
 class Generator(torch.nn.Module):
     """A convolutional neural network (CNN) based generator. The generator takes
     as input a latent vector and outputs a fake sample."""
     def __init__(self, latent_dim, n_tracks, n_measures, measure_resolution, n_pitches,
                  conditioning=False, conditioning_dim=0):
         super().__init__()
+        # latent_dim = 128
         self.latent_dim = latent_dim
         self.n_tracks = n_tracks
         self.n_measures = n_measures
@@ -53,43 +58,69 @@ class Generator(torch.nn.Module):
         self.n_pitches = n_pitches
         self.conditioning = conditioning
         self.conditioning_dim = conditioning_dim
-        if (self.conditioning):
-            self.transconv0 = GeneraterBlock(latent_dim + conditioning_dim, 256, (4, 1, 1), (4, 1, 1))
-        else:
-            self.transconv0 = GeneraterBlock(latent_dim, 256, (4, 1, 1), (4, 1, 1))
-        self.transconv1 = GeneraterBlock(256, 128, (1, 4, 1), (1, 4, 1))
-        self.transconv2 = GeneraterBlock(128, 64, (1, 1, 4), (1, 1, 4))
-        self.transconv3 = GeneraterBlock(64, 32, (1, 1, 3), (1, 1, 1))
-        self.transconv4 = torch.nn.ModuleList([
-            GeneraterBlock(32, 16, (1, 4, 1), (1, 4, 1))
+
+        """
+        # example
+        conditioning_dim = {
+            "shared0": 256
+            "shared1": 128,
+            "shared2": 64,
+            "pt0": 32,
+            "pt1": 16,
+            "tp0": 32,
+            "tp1": 16,
+        }
+        """
+
+        # shared
+        self.shared0 = GeneraterBlock(latent_dim + conditioning_dim["shared0"], 512, (4, 1, 1), (4, 1, 1))  # 4, 1, 1
+        self.shared1 = GeneraterBlock(512 + conditioning_dim["shared1"], 256, (1, 2, 4), (1, 2, 4))  # 4, 2, 4
+        self.shared2 = GeneraterBlock(256 + conditioning_dim["shared2"], 128, (1, 2, 3), (1, 2, 1))  # 4, 4, 6
+
+        # pitch-time private
+        self.pt0 = torch.nn.ModuleList([
+            GeneraterBlock(128 + conditioning_dim["pt0"], 32, (1, 1, 12), (1, 1, 12))  # 4, 4, 72
             for _ in range(n_tracks)
         ])
-        self.transconv5 = torch.nn.ModuleList([
-            FinalGeneraterBlock(16, 1, (1, 1, 12), (1, 1, 12))
+        self.pt1 = torch.nn.ModuleList([
+            GeneraterBlock(32 + conditioning_dim["pt1"], 16, (1, 4, 1), (1, 4, 1))  # 4, 16, 72
             for _ in range(n_tracks)
         ])
 
+        # time-pitch
+        self.tp0 = torch.nn.ModuleList([
+            GeneraterBlock(128 + conditioning_dim["tp0"], 32, (1, 4, 1), (1, 4, 1))  # 4, 16, 72
+            for _ in range(n_tracks)
+        ])
+        self.tp1 = torch.nn.ModuleList([
+            GeneraterBlock(32 + conditioning_dim["tp1"], 16, (1, 1, 12), (1, 1, 12))  # 4, 16, 72
+            for _ in range(n_tracks)
+        ])
 
-    def forward(self, x):
-        # conditioning
-        if (self.conditioning):
-            x, condition = x
-            condition = condition.view(-1, self.conditioning_dim)
-            shape = list(x.shape)
-            shape[1] = self.conditioning_dim
-            # match shape of x and condition excluding dim 1
-            condition = condition.expand(shape)
-            x = torch.cat([x, condition], 1)
-        x = x.view(-1, self.latent_dim + self.conditioning_dim, 1, 1, 1)
-        x = self.transconv0(x)
-        x = self.transconv1(x)
-        x = self.transconv2(x)
-        x = self.transconv3(x)
-        x = [transconv(x) for transconv in self.transconv4]
-        x = torch.cat([transconv(x_) for x_, transconv in zip(x, self.transconv5)], 1)
-        x = x.view(-1, self.n_tracks, self.n_measures * self.measure_resolution, self.n_pitches)
-        x = torch.sigmoid(x)
-        return x
+        # merged private
+        self.merged = torch.nn.ModuleList([
+            FinalGeneraterBlock(16 * self.n_tracks, 1, (1, 1, 1), (1, 1, 1))  # 4, 16, 72
+            for _ in range(n_tracks)
+        ])
+
+    def forward(self, x, conditions):
+        x = self.shared0(cat_cond(x, conditions["shared0"]))
+        x = self.shared1(cat_cond(x, conditions["shared1"]))
+        x = self.shared2(cat_cond(x, conditions["shared2"]))
+
+        # pitch-time
+        pt = [pt_(x) for pt_ in self.pt0]
+        pt = [pt_(pt) for pt_ in self.pt1]
+
+        # time-pitch
+        tp = [tp_(x) for tp_ in self.tp0]
+        tp = [tp_(tp) for tp_ in self.tp1]
+
+        x = [torch.cat([pt[i], tp[i]], 1) for i in range(self.n_tracks)]
+
+        x = self.merged(x)
+        x = torch.cat(x, 1)
+        return torch.tanh(x)
 
 
 class LayerNorm(torch.nn.Module):
@@ -140,31 +171,32 @@ class Discriminator(torch.nn.Module):
         self.n_beats = 4
         self.output_dim = output_dim
         super().__init__()
+        # input: 4, 16, 72
+
         # pitch-time private
         self.pitch_time_p_0 = torch.nn.ModuleList([
-            DiscriminatorBlock(1, 16, (1, 1, 12), (1, 1, 12)) for _ in range(n_tracks)
+            DiscriminatorBlock(1, 16, (1, 1, 12), (1, 1, 12)) for _ in range(n_tracks)  # 4, 16, 6
         ])
         self.pitch_time_p_1 = torch.nn.ModuleList([
-            DiscriminatorBlock(16, 32, (1, 4, 1), (1, 4, 1)) for _ in range(n_tracks)
+            DiscriminatorBlock(16, 32, (1, 4, 1), (1, 4, 1)) for _ in range(n_tracks)  # 4, 4, 6
         ])
 
         # time-pitch private
         self.time_pitch_p_0 = torch.nn.ModuleList([
-            DiscriminatorBlock(1, 16, (1, 4, 1), (1, 4, 1)) for _ in range(n_tracks)
+            DiscriminatorBlock(1, 16, (1, 4, 1), (1, 4, 1)) for _ in range(n_tracks)  # 4, 4, 72
         ])
         self.time_pitch_p_1 = torch.nn.ModuleList([
-            DiscriminatorBlock(16, 32, (1, 1, 12), (1, 1, 12)) for _ in range(n_tracks)
+            DiscriminatorBlock(16, 32, (1, 1, 12), (1, 1, 12)) for _ in range(n_tracks)  # 4, 4, 6
         ])
 
         # merged private
         self.merged_p = torch.nn.ModuleList([
-            DiscriminatorBlock(64, 64, (1, 1, 1), (1, 1, 1)) for _ in range(n_tracks)
+            DiscriminatorBlock(64, 64, (1, 1, 1), (1, 1, 1)) for _ in range(n_tracks)  # 4, 4, 6
         ])
-        # h: 64 filters, 4 x 4 x 7
 
         # shared
-        self.shared_0 = DiscriminatorBlock(64 * n_tracks, 128, (1, 2, 3), (1, 2, 1))
-        self.shared_1 = DiscriminatorBlock(128, 256, (1, 2, 4), (1, 2, 4))
+        self.shared_0 = DiscriminatorBlock(64 * n_tracks, 128, (1, 2, 3), (1, 2, 1))  # 4, 2, 4
+        self.shared_1 = DiscriminatorBlock(128, 256, (1, 2, 4), (1, 2, 4))  # 4, 1, 1
 
         # chroma
         self.chroma_0 = DiscriminatorBlock(self.n_tracks, 32, (1, 1, 12), (1, 1, 12))  # (4, 4, 1)
@@ -245,6 +277,24 @@ class Encoder(torch.nn.Module):
         self.n_pitches = n_pitches
         self.output_dim = output_dim
         super().__init__()
+        # pitch-time private
+        self.pitch_time_p_0 = torch.nn.ModuleList([
+            DiscriminatorBlock(1, 16, (1, 1, 12), (1, 1, 12)) for _ in range(n_tracks)
+        ])
+        self.pitch_time_p_1 = torch.nn.ModuleList([
+            DiscriminatorBlock(16, 32, (1, 4, 1), (1, 4, 1)) for _ in range(n_tracks)
+        ])
+
+        # time-pitch private
+        self.time_pitch_p_0 = torch.nn.ModuleList([
+            DiscriminatorBlock(1, 16, (1, 4, 1), (1, 4, 1)) for _ in range(n_tracks)
+        ])
+        self.time_pitch_p_1 = torch.nn.ModuleList([
+            DiscriminatorBlock(16, 32, (1, 1, 12), (1, 1, 12)) for _ in range(n_tracks)
+        ])
+
+
+
         self.conv0 = torch.nn.ModuleList([
             DiscriminatorBlock(1, 16, (1, 1, 12), (1, 1, 12)) for _ in range(n_tracks)
         ])
