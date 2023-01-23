@@ -108,6 +108,7 @@ class Generator(torch.nn.Module):
         x = self.shared1(cat_cond(x, conditions["shared1"]))
         x = self.shared2(cat_cond(x, conditions["shared2"]))
 
+        # TODO: ここ以降のconditions
         # pitch-time
         pt = [pt_(x) for pt_ in self.pt0]
         pt = [pt_(pt) for pt_ in self.pt1]
@@ -210,8 +211,7 @@ class Discriminator(torch.nn.Module):
         self.all_merge0 = DiscriminatorBlock(384, 512, (2, 1, 1), (1, 1, 1))  # (3, 1, 1)
         self.dense = torch.nn.Linear(512, self.output_dim)
 
-    def forward(self, x, return_fmap=False):
-        # TODO: return_fmap実装
+    def forward(self, x):
         x = x.view(-1, self.n_tracks, self.n_measures, self.measure_resolution, self.n_pitches)
 
         # chroma
@@ -279,44 +279,60 @@ class Encoder(torch.nn.Module):
         super().__init__()
         # pitch-time private
         self.pitch_time_p_0 = torch.nn.ModuleList([
-            DiscriminatorBlock(1, 16, (1, 1, 12), (1, 1, 12)) for _ in range(n_tracks)
+            DiscriminatorBlock(1, 16, (1, 1, 12), (1, 1, 12)) for _ in range(n_tracks)  # 4, 16, 6
         ])
         self.pitch_time_p_1 = torch.nn.ModuleList([
-            DiscriminatorBlock(16, 32, (1, 4, 1), (1, 4, 1)) for _ in range(n_tracks)
+            DiscriminatorBlock(16, 32, (1, 4, 1), (1, 4, 1)) for _ in range(n_tracks)  # 4, 4, 6
         ])
 
         # time-pitch private
         self.time_pitch_p_0 = torch.nn.ModuleList([
-            DiscriminatorBlock(1, 16, (1, 4, 1), (1, 4, 1)) for _ in range(n_tracks)
+            DiscriminatorBlock(1, 16, (1, 4, 1), (1, 4, 1)) for _ in range(n_tracks)  # 4, 4, 72
         ])
         self.time_pitch_p_1 = torch.nn.ModuleList([
-            DiscriminatorBlock(16, 32, (1, 1, 12), (1, 1, 12)) for _ in range(n_tracks)
+            DiscriminatorBlock(16, 32, (1, 1, 12), (1, 1, 12)) for _ in range(n_tracks)  # 4, 4, 6
         ])
 
+        # shared
+        self.shared_0 = DiscriminatorBlock(64 * n_tracks, 64, (1, 2, 3), (1, 2, 1))  # 4, 2, 4
+        self.shared_1 = DiscriminatorBlock(64, 128, (1, 2, 4), (1, 2, 4))  # 4, 1, 1
+        self.shared_2 = DiscriminatorBlock(128, 256, (4, 1, 1), (4, 1, 1))  # 4, 1, 1
 
 
-        self.conv0 = torch.nn.ModuleList([
-            DiscriminatorBlock(1, 16, (1, 1, 12), (1, 1, 12)) for _ in range(n_tracks)
-        ])
-        self.conv1 = torch.nn.ModuleList([
-            DiscriminatorBlock(16, 16, (1, 4, 1), (1, 4, 1)) for _ in range(n_tracks)
-        ])
-        self.conv2 = DiscriminatorBlock(16 * n_tracks, 64, (1, 1, 3), (1, 1, 1))
-        self.conv3 = DiscriminatorBlock(64, 64, (1, 1, 4), (1, 1, 4))
-        self.conv4 = DiscriminatorBlock(64, 128, (1, 4, 1), (1, 4, 1))
-        self.conv5 = DiscriminatorBlock(128, 128, (2, 1, 1), (1, 1, 1))
-        self.conv6 = DiscriminatorBlock(128, 256, (3, 1, 1), (3, 1, 1))
-        self.dense = torch.nn.Linear(256, output_dim)
-
-    def forward(self, x):
+    def forward(self, x, return_values=False):
         x = x.view(-1, self.n_tracks, self.n_measures, self.measure_resolution, self.n_pitches)
-        x = [conv(x[:, [i]]) for i, conv in enumerate(self.conv0)]
-        x = torch.cat([conv(x_) for x_, conv in zip(x, self.conv1)], 1)
-        x = self.conv2(x)
-        x = self.conv3(x)
-        x = self.conv4(x)
-        x = self.conv5(x)
-        x = self.conv6(x)
-        x = x.view(-1, 256)
-        x = self.dense(x)
-        return x
+
+        pt_out = [conv(x[:, [i]]) for i, conv in enumerate(self.pitch_time_p_0)]
+        tp_out = [conv(x[:, [i]]) for i, conv in enumerate(self.time_pitch_p_0)]
+        if (return_values):
+            values = {
+                "pt0": pt_out,
+                "tp0": tp_out,
+            }
+
+        pt_out = [conv(x_) for x_, conv in zip(pt_out, self.pitch_time_p_1)]
+        tp_out = [conv(x_) for x_, conv in zip(tp_out, self.time_pitch_p_1)]
+
+        if (return_values):
+            values["pt1"] = pt_out
+            values["tp1"] = tp_out
+
+        s0 = [torch.cat([pt_out[i], tp_out[i]], 1) for i in range(self.n_tracks)]
+        s0 = torch.cat(s0, 1)
+
+        s0 = self.shared_0(s0)
+        if (return_values):
+            values["shared0"] = s0
+        s0 = self.shared_1(s0)
+        if (return_values):
+            values["shared1"] = s0
+        s0 = self.shared_2(s0)
+        s0 = s0.view(-1, 256)
+        if (return_values):
+            values["shared2"] = s0
+
+
+        if (return_values):
+            return values
+        else:
+            return s0
