@@ -15,7 +15,7 @@ from tqdm import tqdm
 from torch.utils.tensorboard import SummaryWriter
 
 from model import create_generator_from_config
-from model import Discriminator, Encoder
+from model import Discriminator, Encoder, Generator
 from custom import config
 from custom import get_argument_parser
 from fix_seed import fix_seed
@@ -105,24 +105,25 @@ def train_one_step(d_optimizer, g_optimizer, real_samples,
     # Sample from the lantent distribution
     latent = torch.randn(batch_size, latent_dim)
 
-    d_conditioning = config.discriminator_conditioning
-
     # Transfer data to GPU
     if is_cuda:
         real_samples = real_samples.cuda()
         latent = latent.cuda()
 
-    g_conditioning = (encoder is not None)
-    if g_conditioning:
-        conditioning_dim = encoder.output_dim
-        with torch.inference_mode():
-            condition = F.normalize(encoder(real_samples))
+    conditioning_dim = encoder.output_dim
+    condition = {}
+    with torch.inference_mode():
+        enc_out = encoder(real_samples, True)
+        for k in enc_out.keys():
+            if isinstance(enc_out[k], list):
+                condition[k] = []
+                for i in range(len(enc_out[k])):
+                    condition[k].append(F.normalize(enc_out[k][i]))
+            else:
+                condition[k] = F.normalize(enc_out[k])
 
     # Generate fake samples with the generator
-    if (g_conditioning):
-        fake_samples = generator([latent, condition])
-    else:
-        fake_samples = generator(latent)
+    fake_samples = generator(latent, condition)
     # binarize tensor input to discriminator as fake
     fake_sample_binarized = discretize(fake_samples.detach())
 
@@ -146,16 +147,13 @@ def train_one_step(d_optimizer, g_optimizer, real_samples,
     # elif (config.g_embedding_reconstruct_loss == "L1"):
     #     g_embedding_recon_loss_func = torch.nn.L1Loss()
     with torch.inference_mode():
-            fake_samples_embedding = encoder(fake_samples)
-    g_embedding_recon_loss = g_embedding_recon_loss_func(fake_samples_embedding, condition).mean()
+        fake_samples_embedding = encoder(fake_samples)
+    g_embedding_recon_loss = g_embedding_recon_loss_func(fake_samples_embedding, condition["shared0"]).mean()
     loss_dict["g_embedding_recon_loss"] = g_embedding_recon_loss.item()
 
     # Get discriminator outputs for the fake samples
     with torch.no_grad():
-        if (d_conditioning):
-            prediction_fake_g = discriminator([fake_samples, condition])
-        else:
-            prediction_fake_g = discriminator(fake_samples)
+        prediction_fake_g = discriminator(fake_samples)
     # discriminator related loss
     if (config.loss == "mse"):
         g_adv_loss = F.mse_loss(prediction_fake_g, prediction_fake_g.new_ones(prediction_fake_g.size()))
@@ -182,19 +180,10 @@ def train_one_step(d_optimizer, g_optimizer, real_samples,
     # === Train the discriminator ===
     # Re-Generate fake samples with the generator
     with torch.no_grad():
-        if (g_conditioning):
-            fake_samples = generator([latent, condition])
-        else:
-            fake_samples = generator(latent)
+        fake_samples = generator(latent, condition)
 
-    if (d_conditioning):
-        # Get discriminator outputs for the fake samples
-        prediction_fake_d = discriminator([fake_sample_binarized, condition])
-        # Get discriminator outputs for the real samples
-        prediction_real = discriminator([real_samples, condition])
-    else:
-        prediction_fake_d = discriminator(fake_sample_binarized)
-        prediction_real = discriminator(real_samples)
+    prediction_fake_d = discriminator(fake_sample_binarized)
+    prediction_real = discriminator(real_samples)
     # Compute the loss function
     if (config.loss == "mse"):
         d_loss_real = F.mse_loss(prediction_real, prediction_real.new_ones(prediction_real.size()))
@@ -254,6 +243,7 @@ def train(args, config):
     track_names = config.track_names  # name of each track
     tempo = config.tempo
     latent_dim = config.latent_dim
+    conditioning_dim = config.conditioning_dim
 
     # Training
     batch_size = config.batch_size
@@ -282,8 +272,15 @@ def train(args, config):
     data_loader = gene_dataloader(config.train_json, batch=batch_size, shuffle=True)
 
     # Create neural networks
-    discriminator = Discriminator(n_tracks, n_measures, measure_resolution, n_pitches, config.discriminator_conditioning, config.conditioning_dim)
-    generator = create_generator_from_config(config)
+    discriminator = Discriminator(n_tracks, n_measures, measure_resolution, n_pitches)
+    generator = Generator(
+        latent_dim=latent_dim,
+        n_tracks=n_tracks,
+        n_measures=n_measures,
+        measure_resolution=measure_resolution,
+        n_pitches=n_pitches,
+        conditioning_dim=conditioning_dim,
+        )
     print("Number of parameters in G: {}".format(
         sum(p.numel() for p in generator.parameters() if p.requires_grad)))
     print("Number of parameters in D: {}".format(
@@ -301,11 +298,10 @@ def train(args, config):
     conditioning_model_pth = config.conditioning_model_pth
     conditioning_dim = config.conditioning_dim
 
-    if conditioning:
-        encoder = Encoder(
-            n_tracks, n_measures, measure_resolution, n_pitches,
-            conditioning_dim)
-        encoder.load_state_dict(torch.load(conditioning_model_pth))
+    encoder = Encoder(
+        n_tracks, n_measures, measure_resolution, n_pitches,
+        conditioning_dim)
+    encoder.load_state_dict(torch.load(conditioning_model_pth))
 
     # Transfer the neural nets and samples to GPU
     is_cuda = torch.cuda.is_available()

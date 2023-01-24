@@ -89,7 +89,15 @@ if __name__ == '__main__':
     dataset = torch.utils.data.TensorDataset(data)
     data_loader = torch.utils.data.DataLoader(
         dataset, batch_size=batch_size, drop_last=True, shuffle=True)
-
+    conditioning_dim = {
+        "shared0": 256,
+        "shared1": 128,
+        "shared2": 64,
+        "pt0": 32,
+        "pt1": 16,
+        "tp0": 32,
+        "tp1": 16,
+    }
     d = Discriminator(
         n_tracks=5,
         n_measures=4,
@@ -101,17 +109,9 @@ if __name__ == '__main__':
         n_measures=4,
         measure_resolution=16,
         n_pitches=72,
-        output_dim=64,
+        output_dim=conditioning_dim,
     )
-    conditioning_dim = {
-        "shared0": 256,
-        "shared1": 128,
-        "shared2": 64,
-        "pt0": 32,
-        "pt1": 16,
-        "tp0": 32,
-        "tp1": 16,
-    }
+
     g = Generator(
         latent_dim=128,
         n_tracks=5,
