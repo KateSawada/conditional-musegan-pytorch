@@ -16,7 +16,7 @@ from pypianoroll import Multitrack, Track, StandardTrack, BinaryTrack
 import pretty_midi
 from pretty_midi import Instrument, PrettyMIDI
 
-from model import create_generator_from_config, Encoder
+from model import create_generator_from_config, Encoder, Generator
 from custom import config
 from custom import get_argument_parser
 from fix_seed import fix_seed
@@ -135,12 +135,19 @@ def generate(args, config):
             config.conditioning_dim)
         encoder.load_state_dict(torch.load(config.conditioning_model_pth))
 
-        conditions = encoder(segments)
+        conditions = encoder(segments, True)
 
     tempo_array = np.full((4 * 4 * measure_resolution, 1), tempo)
 
 
-    generator = create_generator_from_config(config)
+    generator = Generator(
+        latent_dim=config.latent_dim,
+        n_tracks=config.n_tracks,
+        n_measures=config.n_measures,
+        measure_resolution=measure_resolution,
+        n_pitches=config.n_pitches,
+        conditioning_dim=config.conditioning_dim,
+        )
     generator = torch.nn.DataParallel(generator)
     # generator.load_state_dict(torch.load("../exp/trial/results/checkpoint/generator-20000.pth"))
     generator.load_state_dict(torch.load(config.pth))
@@ -151,7 +158,7 @@ def generate(args, config):
     generator.eval()
 
     if (config.conditioning):
-        samples = generator([sample_latent, conditions]).cpu().detach().numpy()
+        samples = generator(sample_latent, conditions).cpu().detach().numpy()
 
     # Display generated samples
     samples = samples.transpose(1, 0, 2, 3).reshape(config.n_tracks, -1, config.n_pitches)
