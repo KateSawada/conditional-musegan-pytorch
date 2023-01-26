@@ -164,7 +164,7 @@ def train_one_step(d_optimizer, g_optimizer, real_samples,
     loss_dict["g_adv_loss"] = g_adv_loss.item()
 
     # sum generator loss
-    g_loss = g_pianoroll_recon_loss * config.g_pianoroll_reconstruct_loss_weight + g_embedding_recon_loss * config.g_embedding_reconstruct_loss_weight + g_adv_loss
+    g_loss = g_pianoroll_recon_loss * config.g_pianoroll_reconstruct_loss_weight + (-1) * g_embedding_recon_loss * config.g_embedding_reconstruct_loss_weight + g_adv_loss
     loss_dict["g_loss"] = g_loss.item()
 
     # Reset cached gradients to zero
