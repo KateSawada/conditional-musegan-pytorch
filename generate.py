@@ -121,85 +121,84 @@ def generate(args, config):
     tempo = config.tempo
     measure_resolution = 4 * config.beat_resolution
 
-    if (config.generate_json):
-        with open(config.generate_json, "r") as f:
-            segments = json.load(f)
-        # print(segments)
-        # print(type(segments))
-        if (config.generate_random):
-            used_segments = random.sample(segments, config.n_samples)
-        else:
-            used_segments = segments
-        segments = torch.from_numpy(np.array([np.load(file) for file in used_segments]).astype(np.float32))
-        encoder = Encoder(config.n_tracks, config.n_measures, measure_resolution, config.n_pitches,
-            config.conditioning_dim)
-        encoder.load_state_dict(torch.load(config.conditioning_model_pth))
-
-        conditions = encoder(segments)
-
     tempo_array = np.full((4 * 4 * measure_resolution, 1), tempo)
 
+    if (config.generate_json):
+        with open(config.generate_json, "r") as f:
+            segments_list = json.load(f)
+        # print(segments_list)
+        # print(type(segments_list))
+
+    encoder = Encoder(config.n_tracks, config.n_measures, measure_resolution, config.n_pitches,
+        config.conditioning_dim)
+    encoder.load_state_dict(torch.load(config.conditioning_model_pth))
 
     generator = create_generator_from_config(config)
     generator = torch.nn.DataParallel(generator)
     # generator.load_state_dict(torch.load("../exp/trial/results/checkpoint/generator-20000.pth"))
     generator.load_state_dict(torch.load(config.pth))
-
-    # Prepare the inputs for the sampler, which wil run during the training
-    sample_latent = torch.randn(config.n_samples, config.latent_dim)
-
     generator.eval()
 
-    if (config.conditioning):
-        samples = generator([sample_latent, conditions]).cpu().detach().numpy()
+    for song in segments_list.keys():
+        out_dir = os.path.join(config.out_dir, os.path.basename(song))
+        os.makedirs(out_dir)
+        os.makedirs(os.path.join(out_dir, "pianoroll"))
+        os.makedirs(os.path.join(out_dir, "wav"))
+        os.makedirs(os.path.join(out_dir, "npy"))
+        os.makedirs(os.path.join(out_dir, "mid"))
 
-    # Display generated samples
-    samples = samples.transpose(1, 0, 2, 3).reshape(config.n_tracks, -1, config.n_pitches)
-    # print(samples.shape)  # (5, 256, 72)
-    tracks = []
-    for idx, (program, is_drum, track_name) in enumerate(
-        zip(config.programs, config.is_drums, config.track_names)
-    ):
-        pianoroll = np.pad(
-            samples[idx] > 0.5,
-            ((0, 0), (config.lowest_pitch, 128 - config.lowest_pitch - config.n_pitches))
-        )
-        tracks.append(
-            Track(
-                name=track_name,
-                program=program,
-                is_drum=is_drum,
-                pianoroll=pianoroll
-            )
-        )
-    m = Multitrack(tracks=tracks, tempo=tempo_array, resolution=config.beat_resolution)
 
-    axs = m.plot()
+        for seg in segments_list[song]:
+            segment_name = os.path.splitext(os.path.basename(seg))[0]
+            conditions = encoder(torch.from_numpy(np.load(seg).astype(np.float32)))
+            sample_latent = torch.randn(1, config.latent_dim)
+            samples = generator([sample_latent, conditions]).cpu().detach().numpy()
 
-    for ax in axs:
-        for x in range(
-            measure_resolution,
-            4 * measure_resolution * config.n_measures,
-            measure_resolution
-        ):
-            if x % (measure_resolution * 4) == 0:
-                ax.axvline(x - 0.5, color='k')
-            else:
-                ax.axvline(x - 0.5, color='k', linestyle='-', linewidth=1)
-    plt.gcf().set_size_inches((16, 8))
+            # Display generated samples
 
-    out_dir = os.path.join(config.out_dir, datetime.datetime.now().strftime('%Y%m%d-%H%M%S'))
-    os.makedirs(out_dir)
-    config.save(out_dir)
-    plt.savefig(os.path.join(out_dir, "pianoroll.png"))
-    # plt.show()
+            samples = samples.transpose(1, 0, 2, 3).reshape(config.n_tracks, -1, config.n_pitches)
 
-    to_pretty_midi(m).write(os.path.join(out_dir, "generated.mid"))
-    # for i in range(config.n_tracks):
-    #     pypianoroll.write(f"{i}.mid", tracks[i].standardize())
-        # track = StandardTrack(program=config.program[i], is_drum=config.is_drum[i], pianoroll=samples[i])
-    midi_to_wav(os.path.join(out_dir, "generated.mid"), os.path.join(out_dir, "generated.wav"))
-    np.save(os.path.join(out_dir, "generated.npy"), samples)
+            tracks = []
+            for idx, (program, is_drum, track_name) in enumerate(
+                zip(config.programs, config.is_drums, config.track_names)
+            ):
+                pianoroll = np.pad(
+                    samples[idx] > 0.5,
+                    ((0, 0), (config.lowest_pitch, 128 - config.lowest_pitch - config.n_pitches))
+                )
+                tracks.append(
+                    Track(
+                        name=track_name,
+                        program=program,
+                        is_drum=is_drum,
+                        pianoroll=pianoroll
+                    )
+                )
+            m = Multitrack(tracks=tracks, tempo=tempo_array, resolution=config.beat_resolution)
+
+            axs = m.plot()
+
+            for ax in axs:
+                for x in range(
+                    measure_resolution,
+                    4 * measure_resolution * config.n_measures,
+                    measure_resolution
+                ):
+                    if x % (measure_resolution * 4) == 0:
+                        ax.axvline(x - 0.5, color='k')
+                    else:
+                        ax.axvline(x - 0.5, color='k', linestyle='-', linewidth=1)
+            plt.gcf().set_size_inches((16, 8))
+
+            plt.savefig(os.path.join(out_dir, "pianoroll", f"{segment_name}.png"))
+            # plt.show()
+
+            to_pretty_midi(m).write(os.path.join(out_dir, "mid", f"{segment_name}.mid"))
+            # for i in range(config.n_tracks):
+            #     pypianoroll.write(f"{i}.mid", tracks[i].standardize())
+                # track = StandardTrack(program=config.program[i], is_drum=config.is_drum[i], pianoroll=samples[i])
+            midi_to_wav(os.path.join(out_dir, "mid", f"{segment_name}.mid"), os.path.join(out_dir, "wav", f"{segment_name}.wav"))
+            np.save(os.path.join(out_dir, "npy", f"{segment_name}.npy"), samples)
 
 if __name__ == "__main__":
     parser = get_argument_parser()
