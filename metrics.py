@@ -115,7 +115,9 @@ def tonal_distance(tensor, n_measures=4, measure_resolution=16, drum_track=0):
     n_songs = tensor.shape[1] // (song_resolution)
     n_tracks = tensor.shape[0]
 
-    td = np.zeros((n_songs, n_tracks))
+    tonal_matrix = _tonal_matrix()
+
+    td = np.zeros((n_songs, n_tracks - 1, n_tracks - 1))
 
     # pitch方向の端数処理
     rem = tensor.shape[2] % 12
@@ -132,15 +134,21 @@ def tonal_distance(tensor, n_measures=4, measure_resolution=16, drum_track=0):
     tensor = np.reshape(tensor, (n_songs, -1, measure_resolution // 4, 12, n_tracks - 1))
     tensor = np.sum(tensor, axis=2)
 
-    tensor = tensor / np.sum(tensor, axis=2, keepdims=True)  # invalud value出る?
+    tensor = tensor / np.sum(tensor, axis=2, keepdims=True)
+    tensor[np.isnan(tensor)] = 0  # 空白の小節ではzero divisionのためnanが出るため0に置換
+
+    tensor = np.reshape(np.transpose(tensor, (0, 2, 1, 3)), (n_songs, n_tracks - 1, 12, -1))
 
     print(tensor.shape)
 
     for i_song in range(n_songs):
-        tensor_ = tensor[:, song_resolution * i_song : song_resolution * (i_song + 1)]
-        for i_bar in range(n_measures):
-            pass
-    return
+        tensor_ = tensor[i_song]
+        mapped = (tonal_matrix @ tensor_).reshape((6, -1, n_tracks - 1))
+        expanded1 = np.expand_dims(mapped, axis=-1)
+        expanded2 = np.expand_dims(mapped, axis=-2)
+        tonal_dist = np.linalg.norm(expanded1 - expanded2, axis=0)
+        td[i_song] = np.sum(tonal_dist, axis=0)
+    return td
 
 
 
@@ -150,4 +158,4 @@ if __name__ == "__main__":
     print(empty_bars(tensor))
     print(used_pitch_classes(tensor))
     print(drum_pattern(tensor))
-    # print(tonal_distance(tensor))
+    print(tonal_distance(tensor))
