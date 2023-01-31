@@ -5,25 +5,43 @@ import numpy as np
 def empty_bars(tensor, n_measures=4, measure_resolution=16):
     """ratio of empty bars
     tensor.shape = [n_tracks, n_timestep, n_pitch]
+
+    returns:
+        ndarray(shape=(n_songs, n_tracks))
     """
     if (isinstance(tensor, torch.Tensor)):
         tensor = tensor.to('cpu').detach().numpy().copy()
+    # 閾値処理
+    tensor = np.where(tensor >= 0.5, 1, 0)
     song_resolution = n_measures * measure_resolution
     n_songs = tensor.shape[1] // (song_resolution)
     n_tracks = tensor.shape[0]
-    empty_bars_ratio = np.zeros(n_songs)
+    empty_bars_ratio = np.zeros((n_songs, n_tracks))
 
-    # 閾値処理
-    tensor = a = np.where(tensor >= 0.5, 1, 0)
+
 
     # 計算
     for i_song in range(n_songs):
         tensor_ = tensor[:, song_resolution * i_song : song_resolution * (i_song + 1)]
         for i_bar in range(n_measures):
-            empty_bars_ratio[i_song] += np.count_nonzero(np.all(tensor_[:, measure_resolution * i_bar : measure_resolution * (i_bar + 1)] == 0, axis=(1, 2)))
-    return empty_bars_ratio / (n_tracks * n_measures)
+            empty_bars_ratio[i_song] += np.all(tensor_[:, measure_resolution * i_bar : measure_resolution * (i_bar + 1)] == 0, axis=(1, 2))
+    return empty_bars_ratio / n_measures
 
 
+def used_pitch_classes(tensor, n_measures=4, measure_resolution=16):
+    """number of used pitch classes per bar (from 0 to 12)
+    tensor.shape = [n_tracks, n_timestep, n_pitch]
+    """
+    if (isinstance(tensor, torch.Tensor)):
+        tensor = tensor.to('cpu').detach().numpy().copy()
+    # 閾値処理
+    tensor = np.where(tensor >= 0.5, 1, 0)
+
+    song_resolution = n_measures * measure_resolution
+    n_songs = tensor.shape[1] // (song_resolution)
+
+    upc = np.zeros(n_songs)
+    np.count_nonzero(tensor, axis=2)
 
 
 if __name__ == "__main__":
