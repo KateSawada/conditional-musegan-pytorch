@@ -77,13 +77,14 @@ def drum_pattern(tensor, n_measures=4, measure_resolution=16, drum_track=0, tole
     # ドラムトラック抽出
     tensor = tensor[drum_track]
 
-    mask = np.tile((1, tolerance), 8 * n_measures)
+    mask = np.tile((1, tolerance, 0, tolerance), 4 * n_measures)
 
     for i_song in range(n_songs):
         tensor_ = tensor[song_resolution * i_song : song_resolution * (i_song + 1)]
 
         dp[i_song] += np.sum(np.sum(tensor_, axis=1) * mask)
     return dp / n_measures
+
 
 if __name__ == "__main__":
     tensor = np.load("outputs/sotsuron2/generated/s2_d_conditioning_f-conditioning_64-latent_64-adv_hinge-g_recon_L2_0-g_emb_COS_1_model/200000step/20230124-123444/generated.npy")
