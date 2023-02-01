@@ -1,0 +1,49 @@
+CONFIG_FILE_NAME: save.yml
+batch_size: 64
+beat_resolution: 4
+c_recon: 10
+command: python3 train.py -c config/d_conditioning/d_conditioning.yml -m sotruson3_d_conditioning_model
+conditioning: true
+conditioning_dim: 64
+conditioning_model: triplet
+conditioning_model_pth: ignore/conditioning/triplet/tested/dim64/model1000.pth
+discriminator_conditioning: true
+discriminator_grad_norm: 10
+experiment: sotruson3_d_conditioning_model
+g_embedding_reconstruct_loss: COS
+g_embedding_reconstruct_loss_weight: 0
+g_pianoroll_reconstruct_loss: L2
+g_pianoroll_reconstruct_loss_weight: 0
+generator_grad_norm: 10
+is_drums:
+- true
+- false
+- false
+- false
+- false
+latent_dim: 64
+loss: hinge
+lowest_pitch: 24
+n_measures: 4
+n_pitches: 72
+n_samples_per_song: 8
+n_steps: 300000
+n_tracks: 5
+programs:
+- 0
+- 0
+- 25
+- 33
+- 48
+seed: 0
+tempo: 100
+track_names:
+- Drums
+- Piano
+- Guitar
+- Bass
+- Strings
+train_data: data.npy
+train_json: data/json/train_dict.json
+trained_d_model: null
+trained_g_model: null
