@@ -183,3 +183,4 @@ _exp_sotsuron_*
 
 /outputs
 !sotsuron_models/
+events.out.tfevents.*
