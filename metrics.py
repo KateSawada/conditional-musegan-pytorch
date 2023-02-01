@@ -1,5 +1,11 @@
+import json
+import glob
+import os
+
 import torch
 import numpy as np
+
+from model import Encoder
 
 
 def empty_bars(tensor, n_measures=4, measure_resolution=16):
@@ -17,8 +23,6 @@ def empty_bars(tensor, n_measures=4, measure_resolution=16):
     n_songs = tensor.shape[1] // (song_resolution)
     n_tracks = tensor.shape[0]
     empty_bars_ratio = np.zeros((n_songs, n_tracks))
-
-
 
     # 計算
     for i_song in range(n_songs):
@@ -139,8 +143,6 @@ def tonal_distance(tensor, n_measures=4, measure_resolution=16, drum_track=0):
 
     tensor = np.reshape(np.transpose(tensor, (0, 2, 1, 3)), (n_songs, n_tracks - 1, 12, -1))
 
-    print(tensor.shape)
-
     for i_song in range(n_songs):
         tensor_ = tensor[i_song]
         mapped = (tonal_matrix @ tensor_).reshape((6, -1, n_tracks - 1))
@@ -151,11 +153,69 @@ def tonal_distance(tensor, n_measures=4, measure_resolution=16, drum_track=0):
     return td
 
 
+def cos_sim(v1, v2):
+    return np.dot(v1, v2) / (np.linalg.norm(v1) * np.linalg.norm(v2))
+
 
 if __name__ == "__main__":
-    tensor = np.load("outputs/sotsuron2/generated/s2_d_conditioning_f-conditioning_64-latent_64-adv_hinge-g_recon_L2_0-g_emb_COS_1_model/200000step/20230124-123444/generated.npy")
-    tensor = np.load("outputs/sotsuron/generated/d_conditioning_f-conditioning_64-latent_64-adv_hinge-g_recon_BCE_1_model/1000000step/20230110-115255/generated.npy")
-    print(empty_bars(tensor))
-    print(used_pitch_classes(tensor))
-    print(drum_pattern(tensor))
-    print(tonal_distance(tensor))
+    # tensor = np.load("outputs/sotsuron2/generated/s2_d_conditioning_f-conditioning_64-latent_64-adv_hinge-g_recon_L2_0-g_emb_COS_1_model/200000step/20230124-123444/generated.npy")
+    # tensor = np.load("outputs/sotsuron/generated/d_conditioning_f-conditioning_64-latent_64-adv_hinge-g_recon_BCE_1_model/1000000step/20230110-115255/generated.npy")
+    # print(empty_bars(tensor))
+    # print(used_pitch_classes(tensor))
+    # print(drum_pattern(tensor))
+    # print(tonal_distance(tensor))
+
+    n_tracks = 5
+    n_measures = 4
+    measure_resolution = 16
+    n_pitches = 72
+    output_dim = 64
+
+    encoder = Encoder(n_tracks, n_measures, measure_resolution, n_pitches, output_dim)
+
+    target_dirs = [
+        "sotsuron_models/sotsuron1_d_conditioning_model",
+        "sotsuron_models/sotsuron2_pianoroll_distance_model",
+        "sotsuron_models/sotsuron3_embedding_distance_model",
+        ]
+
+    for dir in target_dirs:
+        out_file_path = os.path.join(dir, "metrics.json")
+        out_json = {}
+        dirs = glob.glob(os.path.join(dir, "generated/*"))
+
+        for song_dir in dirs:
+            npys = glob.glob(os.path.join(song_dir, "npy", "*.npy"))
+            out_json[song_dir] = {}
+
+            for npy in npys:
+                # sotsuron_models/sotsuron3_embedding_distance_model/generated/00005542_TRHIRGP128F4280974_repeat/npy/105.npy
+                # TODO: ここのコードの汚さ…
+                song_id = npy.split("/")[3]
+                if (song_id[-7:] == "_repeat"):
+                    song_id = song_id[:-7]
+                elif (song_id[-6:] == "_noise"):
+                    song_id = song_id[:-6]
+                song_number = npy.split("/")[5]
+
+                reference = np.load(os.path.join("data", "all", song_id, song_number))
+                ref_embedding = encoder(torch.from_numpy(reference.astype(np.float32))).cpu().detach().numpy()
+
+                out_json[song_dir][npy] = {}
+                pianoroll = np.load(npy)
+                out_json[song_dir][npy]["EB"] = empty_bars(pianoroll).tolist()
+                out_json[song_dir][npy]["UPC"] = used_pitch_classes(pianoroll).tolist()
+                out_json[song_dir][npy]["DP"] = drum_pattern(pianoroll).tolist()
+                out_json[song_dir][npy]["TD"] = tonal_distance(pianoroll).tolist()
+
+                distances = []
+                with torch.inference_mode():
+                    for i in range(pianoroll.shape[1] // (n_measures * measure_resolution)):
+                        encoded = encoder(
+                            torch.from_numpy(pianoroll[:, i * (n_measures * measure_resolution) : (i + 1) * (n_measures * measure_resolution)].astype(np.float32))
+                            ).cpu().detach().numpy()[0]
+                        distances.append(float(cos_sim(ref_embedding, encoded)[0]))
+                out_json[song_dir][npy]["COS_SIM"] = distances
+
+        with open(out_file_path, "w") as f:
+            json.dump(out_json, f)
