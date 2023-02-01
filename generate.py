@@ -11,6 +11,7 @@ import scipy.stats
 import numpy as np
 import matplotlib.pyplot as plt
 import torch
+import torch.nn.functional as F
 import pypianoroll
 from pypianoroll import Multitrack, Track, StandardTrack, BinaryTrack
 import pretty_midi
@@ -150,13 +151,25 @@ def generate(args, config):
 
         for seg in segments_list[song]:
             segment_name = os.path.splitext(os.path.basename(seg))[0]
-            conditions = encoder(torch.from_numpy(np.load(seg).astype(np.float32)))
+            conditions = F.normalize(encoder(torch.from_numpy(np.load(seg).astype(np.float32))))
+            if ("add_noise" in config.dict.keys() and config.add_noise):
+                conditions += torch.normal(mean=0, std=config.additional_noise_std, size=conditions.shape)
+
             sample_latent = torch.randn(1, config.latent_dim)
             samples = generator([sample_latent, conditions]).cpu().detach().numpy()
+            samples = samples.transpose(1, 0, 2, 3).reshape(config.n_tracks, -1, config.n_pitches)
+
+            if ("n_repeat" in config.dict.keys()):
+                for _ in range(int(config.n_repeat) - 1):
+                    sample_latent = torch.randn(1, config.latent_dim)
+                    samples_ = generator([sample_latent, conditions]).cpu().detach().numpy()
+                    samples_ = samples_.transpose(1, 0, 2, 3).reshape(config.n_tracks, -1, config.n_pitches)
+
+                    samples = np.concatenate((samples, samples_), axis=1)
+
 
             # Display generated samples
 
-            samples = samples.transpose(1, 0, 2, 3).reshape(config.n_tracks, -1, config.n_pitches)
 
             tracks = []
             for idx, (program, is_drum, track_name) in enumerate(
