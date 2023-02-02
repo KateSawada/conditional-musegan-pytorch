@@ -196,7 +196,7 @@ def for_train():
 
 
 def for_baseline():
-    dir = "/home/ksawada/Documents/lab/lab_research/ismir2019tutorial/outputs/baseline/20000/npy"
+    dir = "/home/ksawada/Documents/lab/lab_research/ismir2019tutorial/outputs/baseline/100000/npy"
 
     eb = []
     upc = []
