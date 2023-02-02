@@ -62,10 +62,10 @@
                 ]
             ],
             "DP": [
-                12.0,
-                12.0,
-                12.0,
-                12.0
+                0.1791044776119403,
+                0.18181818181818182,
+                0.18461538461538463,
+                0.18461538461538463
             ],
             "TD": [
                 [
@@ -174,10 +174,10 @@
                 ]
             ],
             "COS_SIM": [
-                0.9499335289001465,
-                0.9538607597351074,
-                0.952243447303772,
-                0.9467447996139526
+                0.9106371998786926,
+                0.9055777788162231,
+                0.9043991565704346,
+                0.8982175588607788
             ]
         }
     },
@@ -244,10 +244,10 @@
                 ]
             ],
             "DP": [
-                23.275,
-                22.775,
-                22.575,
-                23.275
+                0.09697916666666666,
+                0.09732905982905982,
+                0.09565677966101695,
+                0.09738493723849372
             ],
             "TD": [
                 [
@@ -356,10 +356,10 @@
                 ]
             ],
             "COS_SIM": [
-                0.8868898153305054,
-                0.8884357810020447,
-                0.8925563097000122,
-                0.8933278918266296
+                0.8706486821174622,
+                0.8701180815696716,
+                0.8715651631355286,
+                0.8626648783683777
             ]
         }
     },
@@ -384,7 +384,7 @@
                 ]
             ],
             "DP": [
-                13.2
+                0.09166666666666666
             ],
             "TD": [
                 [
@@ -415,7 +415,7 @@
                 ]
             ],
             "COS_SIM": [
-                0.9513525366783142
+                0.9540389180183411
             ]
         },
         "sotsuron_models/sotsuron2_pianoroll_distance_model/generated/00006683_TRSUXOX128F429060A/npy/68.npy": {
@@ -438,7 +438,7 @@
                 ]
             ],
             "DP": [
-                13.2
+                0.0923076923076923
             ],
             "TD": [
                 [
@@ -469,7 +469,7 @@
                 ]
             ],
             "COS_SIM": [
-                0.9826107025146484
+                0.9672632217407227
             ]
         },
         "sotsuron_models/sotsuron2_pianoroll_distance_model/generated/00006683_TRSUXOX128F429060A/npy/69.npy": {
@@ -492,7 +492,7 @@
                 ]
             ],
             "DP": [
-                13.175
+                0.09213286713286714
             ],
             "TD": [
                 [
@@ -523,7 +523,7 @@
                 ]
             ],
             "COS_SIM": [
-                0.9836307168006897
+                0.9467582702636719
             ]
         },
         "sotsuron_models/sotsuron2_pianoroll_distance_model/generated/00006683_TRSUXOX128F429060A/npy/103.npy": {
@@ -546,7 +546,7 @@
                 ]
             ],
             "DP": [
-                13.2
+                0.09166666666666666
             ],
             "TD": [
                 [
@@ -577,7 +577,7 @@
                 ]
             ],
             "COS_SIM": [
-                0.962758481502533
+                0.972927987575531
             ]
         },
         "sotsuron_models/sotsuron2_pianoroll_distance_model/generated/00006683_TRSUXOX128F429060A/npy/59.npy": {
@@ -600,7 +600,7 @@
                 ]
             ],
             "DP": [
-                13.225000000000001
+                0.09120689655172415
             ],
             "TD": [
                 [
@@ -631,7 +631,7 @@
                 ]
             ],
             "COS_SIM": [
-                0.9703155159950256
+                0.9584695100784302
             ]
         },
         "sotsuron_models/sotsuron2_pianoroll_distance_model/generated/00006683_TRSUXOX128F429060A/npy/72.npy": {
@@ -654,7 +654,7 @@
                 ]
             ],
             "DP": [
-                13.2
+                0.09166666666666666
             ],
             "TD": [
                 [
@@ -685,7 +685,7 @@
                 ]
             ],
             "COS_SIM": [
-                0.982679009437561
+                0.9710330367088318
             ]
         },
         "sotsuron_models/sotsuron2_pianoroll_distance_model/generated/00006683_TRSUXOX128F429060A/npy/107.npy": {
@@ -708,7 +708,7 @@
                 ]
             ],
             "DP": [
-                13.15
+                0.0926056338028169
             ],
             "TD": [
                 [
@@ -739,7 +739,7 @@
                 ]
             ],
             "COS_SIM": [
-                0.9485338926315308
+                0.9677298665046692
             ]
         },
         "sotsuron_models/sotsuron2_pianoroll_distance_model/generated/00006683_TRSUXOX128F429060A/npy/33.npy": {
@@ -762,7 +762,7 @@
                 ]
             ],
             "DP": [
-                13.175
+                0.09213286713286714
             ],
             "TD": [
                 [
@@ -793,7 +793,7 @@
                 ]
             ],
             "COS_SIM": [
-                0.9559990763664246
+                0.9330354332923889
             ]
         }
     },
@@ -818,7 +818,7 @@
                 ]
             ],
             "DP": [
-                11.75
+                0.18359375
             ],
             "TD": [
                 [
@@ -849,7 +849,7 @@
                 ]
             ],
             "COS_SIM": [
-                0.9242072701454163
+                0.9467941522598267
             ]
         },
         "sotsuron_models/sotsuron2_pianoroll_distance_model/generated/00005542_TRHIRGP128F4280974/npy/128.npy": {
@@ -872,7 +872,7 @@
                 ]
             ],
             "DP": [
-                12.0
+                0.1875
             ],
             "TD": [
                 [
@@ -903,7 +903,7 @@
                 ]
             ],
             "COS_SIM": [
-                0.9424080848693848
+                0.8992007374763489
             ]
         },
         "sotsuron_models/sotsuron2_pianoroll_distance_model/generated/00005542_TRHIRGP128F4280974/npy/140.npy": {
@@ -926,7 +926,7 @@
                 ]
             ],
             "DP": [
-                10.5
+                0.1810344827586207
             ],
             "TD": [
                 [
@@ -957,7 +957,7 @@
                 ]
             ],
             "COS_SIM": [
-                0.93230140209198
+                0.8662146925926208
             ]
         },
         "sotsuron_models/sotsuron2_pianoroll_distance_model/generated/00005542_TRHIRGP128F4280974/npy/98.npy": {
@@ -980,7 +980,7 @@
                 ]
             ],
             "DP": [
-                12.75
+                0.19029850746268656
             ],
             "TD": [
                 [
@@ -1011,7 +1011,7 @@
                 ]
             ],
             "COS_SIM": [
-                0.9448837637901306
+                0.9588181376457214
             ]
         },
         "sotsuron_models/sotsuron2_pianoroll_distance_model/generated/00005542_TRHIRGP128F4280974/npy/105.npy": {
@@ -1034,7 +1034,7 @@
                 ]
             ],
             "DP": [
-                12.0
+                0.18461538461538463
             ],
             "TD": [
                 [
@@ -1065,7 +1065,7 @@
                 ]
             ],
             "COS_SIM": [
-                0.948673665523529
+                0.9076029658317566
             ]
         },
         "sotsuron_models/sotsuron2_pianoroll_distance_model/generated/00005542_TRHIRGP128F4280974/npy/87.npy": {
@@ -1088,7 +1088,7 @@
                 ]
             ],
             "DP": [
-                12.5
+                0.1893939393939394
             ],
             "TD": [
                 [
@@ -1119,7 +1119,7 @@
                 ]
             ],
             "COS_SIM": [
-                0.9211325645446777
+                0.915679395198822
             ]
         },
         "sotsuron_models/sotsuron2_pianoroll_distance_model/generated/00005542_TRHIRGP128F4280974/npy/108.npy": {
@@ -1142,7 +1142,7 @@
                 ]
             ],
             "DP": [
-                12.0
+                0.1791044776119403
             ],
             "TD": [
                 [
@@ -1173,7 +1173,7 @@
                 ]
             ],
             "COS_SIM": [
-                0.8807136416435242
+                0.9339938759803772
             ]
         },
         "sotsuron_models/sotsuron2_pianoroll_distance_model/generated/00005542_TRHIRGP128F4280974/npy/114.npy": {
@@ -1196,7 +1196,7 @@
                 ]
             ],
             "DP": [
-                11.75
+                0.1865079365079365
             ],
             "TD": [
                 [
@@ -1227,7 +1227,7 @@
                 ]
             ],
             "COS_SIM": [
-                0.9170262217521667
+                0.865938127040863
             ]
         }
     },
@@ -1252,7 +1252,7 @@
                 ]
             ],
             "DP": [
-                8.025
+                0.17445652173913045
             ],
             "TD": [
                 [
@@ -1283,7 +1283,7 @@
                 ]
             ],
             "COS_SIM": [
-                0.9216348528862
+                0.9296051263809204
             ]
         },
         "sotsuron_models/sotsuron2_pianoroll_distance_model/generated/00001703_TRNHGBY128F4279B99/npy/76.npy": {
@@ -1306,7 +1306,7 @@
                 ]
             ],
             "DP": [
-                6.5
+                0.17567567567567569
             ],
             "TD": [
                 [
@@ -1337,7 +1337,7 @@
                 ]
             ],
             "COS_SIM": [
-                0.9297088384628296
+                0.8544898629188538
             ]
         },
         "sotsuron_models/sotsuron2_pianoroll_distance_model/generated/00001703_TRNHGBY128F4279B99/npy/25.npy": {
@@ -1360,7 +1360,7 @@
                 ]
             ],
             "DP": [
-                8.0
+                0.16666666666666666
             ],
             "TD": [
                 [
@@ -1391,7 +1391,7 @@
                 ]
             ],
             "COS_SIM": [
-                0.9492453932762146
+                0.9145749807357788
             ]
         },
         "sotsuron_models/sotsuron2_pianoroll_distance_model/generated/00001703_TRNHGBY128F4279B99/npy/97.npy": {
@@ -1414,7 +1414,7 @@
                 ]
             ],
             "DP": [
-                7.0
+                0.2
             ],
             "TD": [
                 [
@@ -1445,7 +1445,7 @@
                 ]
             ],
             "COS_SIM": [
-                0.9331632852554321
+                0.888264000415802
             ]
         },
         "sotsuron_models/sotsuron2_pianoroll_distance_model/generated/00001703_TRNHGBY128F4279B99/npy/151.npy": {
@@ -1468,7 +1468,7 @@
                 ]
             ],
             "DP": [
-                8.05
+                0.1548076923076923
             ],
             "TD": [
                 [
@@ -1499,7 +1499,7 @@
                 ]
             ],
             "COS_SIM": [
-                0.9678744673728943
+                0.8747824430465698
             ]
         },
         "sotsuron_models/sotsuron2_pianoroll_distance_model/generated/00001703_TRNHGBY128F4279B99/npy/147.npy": {
@@ -1522,7 +1522,7 @@
                 ]
             ],
             "DP": [
-                9.0
+                0.17307692307692307
             ],
             "TD": [
                 [
@@ -1553,7 +1553,7 @@
                 ]
             ],
             "COS_SIM": [
-                0.9734318852424622
+                0.9517790079116821
             ]
         },
         "sotsuron_models/sotsuron2_pianoroll_distance_model/generated/00001703_TRNHGBY128F4279B99/npy/148.npy": {
@@ -1576,7 +1576,7 @@
                 ]
             ],
             "DP": [
-                9.25
+                0.17452830188679244
             ],
             "TD": [
                 [
@@ -1607,7 +1607,7 @@
                 ]
             ],
             "COS_SIM": [
-                0.9626989960670471
+                0.9338818788528442
             ]
         },
         "sotsuron_models/sotsuron2_pianoroll_distance_model/generated/00001703_TRNHGBY128F4279B99/npy/28.npy": {
@@ -1630,7 +1630,7 @@
                 ]
             ],
             "DP": [
-                9.0
+                0.17307692307692307
             ],
             "TD": [
                 [
@@ -1661,7 +1661,7 @@
                 ]
             ],
             "COS_SIM": [
-                0.9506682753562927
+                0.8737526535987854
             ]
         }
     },
@@ -1686,7 +1686,7 @@
                 ]
             ],
             "DP": [
-                10.0
+                0.17857142857142858
             ],
             "TD": [
                 [
@@ -1717,7 +1717,7 @@
                 ]
             ],
             "COS_SIM": [
-                0.9084829092025757
+                0.8721903562545776
             ]
         },
         "sotsuron_models/sotsuron2_pianoroll_distance_model/generated/00004757_TRCJFDK128F931DA2F/npy/68.npy": {
@@ -1740,7 +1740,7 @@
                 ]
             ],
             "DP": [
-                10.0
+                0.18867924528301888
             ],
             "TD": [
                 [
@@ -1771,7 +1771,7 @@
                 ]
             ],
             "COS_SIM": [
-                0.9227544665336609
+                0.9363805651664734
             ]
         },
         "sotsuron_models/sotsuron2_pianoroll_distance_model/generated/00004757_TRCJFDK128F931DA2F/npy/88.npy": {
@@ -1794,7 +1794,7 @@
                 ]
             ],
             "DP": [
-                10.0
+                0.17857142857142858
             ],
             "TD": [
                 [
@@ -1825,7 +1825,7 @@
                 ]
             ],
             "COS_SIM": [
-                0.9360457062721252
+                0.8793900012969971
             ]
         },
         "sotsuron_models/sotsuron2_pianoroll_distance_model/generated/00004757_TRCJFDK128F931DA2F/npy/75.npy": {
@@ -1848,7 +1848,7 @@
                 ]
             ],
             "DP": [
-                10.0
+                0.17857142857142858
             ],
             "TD": [
                 [
@@ -1879,7 +1879,7 @@
                 ]
             ],
             "COS_SIM": [
-                0.9680976867675781
+                0.8965150117874146
             ]
         },
         "sotsuron_models/sotsuron2_pianoroll_distance_model/generated/00004757_TRCJFDK128F931DA2F/npy/76.npy": {
@@ -1902,7 +1902,7 @@
                 ]
             ],
             "DP": [
-                10.0
+                0.17857142857142858
             ],
             "TD": [
                 [
@@ -1933,7 +1933,7 @@
                 ]
             ],
             "COS_SIM": [
-                0.9472932815551758
+                0.8505029678344727
             ]
         },
         "sotsuron_models/sotsuron2_pianoroll_distance_model/generated/00004757_TRCJFDK128F931DA2F/npy/61.npy": {
@@ -1956,7 +1956,7 @@
                 ]
             ],
             "DP": [
-                10.0
+                0.17857142857142858
             ],
             "TD": [
                 [
@@ -1987,7 +1987,7 @@
                 ]
             ],
             "COS_SIM": [
-                0.916003406047821
+                0.9446828365325928
             ]
         },
         "sotsuron_models/sotsuron2_pianoroll_distance_model/generated/00004757_TRCJFDK128F931DA2F/npy/42.npy": {
@@ -2010,7 +2010,7 @@
                 ]
             ],
             "DP": [
-                10.0
+                0.17857142857142858
             ],
             "TD": [
                 [
@@ -2041,7 +2041,7 @@
                 ]
             ],
             "COS_SIM": [
-                0.9317347407341003
+                0.9327819347381592
             ]
         },
         "sotsuron_models/sotsuron2_pianoroll_distance_model/generated/00004757_TRCJFDK128F931DA2F/npy/38.npy": {
@@ -2064,7 +2064,7 @@
                 ]
             ],
             "DP": [
-                7.25
+                0.16111111111111112
             ],
             "TD": [
                 [
@@ -2095,7 +2095,7 @@
                 ]
             ],
             "COS_SIM": [
-                0.9321789145469666
+                0.8528383374214172
             ]
         }
     },
@@ -2120,7 +2120,7 @@
                 ]
             ],
             "DP": [
-                4.75
+                0.18269230769230768
             ],
             "TD": [
                 [
@@ -2151,7 +2151,7 @@
                 ]
             ],
             "COS_SIM": [
-                0.9200254082679749
+                0.9709861874580383
             ]
         },
         "sotsuron_models/sotsuron2_pianoroll_distance_model/generated/00002138_TRRFGNP128F42A0230/npy/69.npy": {
@@ -2174,7 +2174,7 @@
                 ]
             ],
             "DP": [
-                5.5
+                0.16666666666666666
             ],
             "TD": [
                 [
@@ -2205,7 +2205,7 @@
                 ]
             ],
             "COS_SIM": [
-                0.9144893288612366
+                0.8528701066970825
             ]
         },
         "sotsuron_models/sotsuron2_pianoroll_distance_model/generated/00002138_TRRFGNP128F42A0230/npy/67.npy": {
@@ -2228,7 +2228,7 @@
                 ]
             ],
             "DP": [
-                5.75
+                0.1554054054054054
             ],
             "TD": [
                 [
@@ -2259,7 +2259,7 @@
                 ]
             ],
             "COS_SIM": [
-                0.9059125781059265
+                0.8769187331199646
             ]
         },
         "sotsuron_models/sotsuron2_pianoroll_distance_model/generated/00002138_TRRFGNP128F42A0230/npy/25.npy": {
@@ -2282,7 +2282,7 @@
                 ]
             ],
             "DP": [
-                7.5
+                0.1595744680851064
             ],
             "TD": [
                 [
@@ -2313,7 +2313,7 @@
                 ]
             ],
             "COS_SIM": [
-                0.8700798153877258
+                0.9134097099304199
             ]
         },
         "sotsuron_models/sotsuron2_pianoroll_distance_model/generated/00002138_TRRFGNP128F42A0230/npy/87.npy": {
@@ -2336,7 +2336,7 @@
                 ]
             ],
             "DP": [
-                7.0
+                0.17073170731707318
             ],
             "TD": [
                 [
@@ -2367,7 +2367,7 @@
                 ]
             ],
             "COS_SIM": [
-                0.9291613698005676
+                0.9432137608528137
             ]
         },
         "sotsuron_models/sotsuron2_pianoroll_distance_model/generated/00002138_TRRFGNP128F42A0230/npy/61.npy": {
@@ -2390,7 +2390,7 @@
                 ]
             ],
             "DP": [
-                4.25
+                0.17
             ],
             "TD": [
                 [
@@ -2421,7 +2421,7 @@
                 ]
             ],
             "COS_SIM": [
-                0.9325932860374451
+                0.9199033379554749
             ]
         },
         "sotsuron_models/sotsuron2_pianoroll_distance_model/generated/00002138_TRRFGNP128F42A0230/npy/33.npy": {
@@ -2444,7 +2444,7 @@
                 ]
             ],
             "DP": [
-                5.25
+                0.1590909090909091
             ],
             "TD": [
                 [
@@ -2475,7 +2475,7 @@
                 ]
             ],
             "COS_SIM": [
-                0.941089391708374
+                0.8701943159103394
             ]
         },
         "sotsuron_models/sotsuron2_pianoroll_distance_model/generated/00002138_TRRFGNP128F42A0230/npy/65.npy": {
@@ -2498,7 +2498,7 @@
                 ]
             ],
             "DP": [
-                7.0
+                0.175
             ],
             "TD": [
                 [
@@ -2529,7 +2529,7 @@
                 ]
             ],
             "COS_SIM": [
-                0.7902812361717224
+                0.9282662272453308
             ]
         }
     },
@@ -2554,7 +2554,7 @@
                 ]
             ],
             "DP": [
-                6.25
+                0.1488095238095238
             ],
             "TD": [
                 [
@@ -2585,7 +2585,7 @@
                 ]
             ],
             "COS_SIM": [
-                0.9381399154663086
+                0.8362837433815002
             ]
         },
         "sotsuron_models/sotsuron2_pianoroll_distance_model/generated/00001324_TRMZRMS128F4235421/npy/30.npy": {
@@ -2608,7 +2608,7 @@
                 ]
             ],
             "DP": [
-                3.75
+                0.1875
             ],
             "TD": [
                 [
@@ -2639,7 +2639,7 @@
                 ]
             ],
             "COS_SIM": [
-                0.955979585647583
+                0.9103506207466125
             ]
         },
         "sotsuron_models/sotsuron2_pianoroll_distance_model/generated/00001324_TRMZRMS128F4235421/npy/40.npy": {
@@ -2662,7 +2662,7 @@
                 ]
             ],
             "DP": [
-                4.55
+                0.175
             ],
             "TD": [
                 [
@@ -2693,7 +2693,7 @@
                 ]
             ],
             "COS_SIM": [
-                0.9558420181274414
+                0.9166398048400879
             ]
         },
         "sotsuron_models/sotsuron2_pianoroll_distance_model/generated/00001324_TRMZRMS128F4235421/npy/61.npy": {
@@ -2716,7 +2716,7 @@
                 ]
             ],
             "DP": [
-                4.25
+                0.14166666666666666
             ],
             "TD": [
                 [
@@ -2747,7 +2747,7 @@
                 ]
             ],
             "COS_SIM": [
-                0.9734505414962769
+                0.8553083539009094
             ]
         },
         "sotsuron_models/sotsuron2_pianoroll_distance_model/generated/00001324_TRMZRMS128F4235421/npy/60.npy": {
@@ -2770,7 +2770,7 @@
                 ]
             ],
             "DP": [
-                5.75
+                0.13372093023255813
             ],
             "TD": [
                 [
@@ -2801,7 +2801,7 @@
                 ]
             ],
             "COS_SIM": [
-                0.9336829781532288
+                0.9210348129272461
             ]
         },
         "sotsuron_models/sotsuron2_pianoroll_distance_model/generated/00001324_TRMZRMS128F4235421/npy/43.npy": {
@@ -2824,7 +2824,7 @@
                 ]
             ],
             "DP": [
-                6.0
+                0.16666666666666666
             ],
             "TD": [
                 [
@@ -2855,7 +2855,7 @@
                 ]
             ],
             "COS_SIM": [
-                0.9371898174285889
+                0.8747219443321228
             ]
         },
         "sotsuron_models/sotsuron2_pianoroll_distance_model/generated/00001324_TRMZRMS128F4235421/npy/36.npy": {
@@ -2878,7 +2878,7 @@
                 ]
             ],
             "DP": [
-                5.5
+                0.15714285714285714
             ],
             "TD": [
                 [
@@ -2909,7 +2909,7 @@
                 ]
             ],
             "COS_SIM": [
-                0.9230450391769409
+                0.9486702084541321
             ]
         },
         "sotsuron_models/sotsuron2_pianoroll_distance_model/generated/00001324_TRMZRMS128F4235421/npy/16.npy": {
@@ -2932,7 +2932,7 @@
                 ]
             ],
             "DP": [
-                4.75
+                0.18269230769230768
             ],
             "TD": [
                 [
@@ -2963,7 +2963,7 @@
                 ]
             ],
             "COS_SIM": [
-                0.8955777287483215
+                0.9362092018127441
             ]
         }
     },
@@ -2988,7 +2988,7 @@
                 ]
             ],
             "DP": [
-                3.8750000000000004
+                0.09687500000000002
             ],
             "TD": [
                 [
@@ -3019,7 +3019,7 @@
                 ]
             ],
             "COS_SIM": [
-                0.9469898343086243
+                0.8405458331108093
             ]
         },
         "sotsuron_models/sotsuron2_pianoroll_distance_model/generated/00001644_TRNUKNP128F933D7F7/npy/0.npy": {
@@ -3042,7 +3042,7 @@
                 ]
             ],
             "DP": [
-                5.05
+                0.14852941176470588
             ],
             "TD": [
                 [
@@ -3073,7 +3073,7 @@
                 ]
             ],
             "COS_SIM": [
-                0.8874824643135071
+                0.8006572127342224
             ]
         },
         "sotsuron_models/sotsuron2_pianoroll_distance_model/generated/00001644_TRNUKNP128F933D7F7/npy/2.npy": {
@@ -3096,7 +3096,7 @@
                 ]
             ],
             "DP": [
-                4.1499999999999995
+                0.08829787234042552
             ],
             "TD": [
                 [
@@ -3127,7 +3127,7 @@
                 ]
             ],
             "COS_SIM": [
-                0.948107123374939
+                0.7925621867179871
             ]
         },
         "sotsuron_models/sotsuron2_pianoroll_distance_model/generated/00001644_TRNUKNP128F933D7F7/npy/4.npy": {
@@ -3150,7 +3150,7 @@
                 ]
             ],
             "DP": [
-                5.075
+                0.09759615384615385
             ],
             "TD": [
                 [
@@ -3181,7 +3181,7 @@
                 ]
             ],
             "COS_SIM": [
-                0.9223317503929138
+                0.8451740741729736
             ]
         },
         "sotsuron_models/sotsuron2_pianoroll_distance_model/generated/00001644_TRNUKNP128F933D7F7/npy/41.npy": {
@@ -3204,7 +3204,7 @@
                 ]
             ],
             "DP": [
-                4.175000000000001
+                0.10437500000000002
             ],
             "TD": [
                 [
@@ -3235,7 +3235,7 @@
                 ]
             ],
             "COS_SIM": [
-                0.951169490814209
+                0.8633719086647034
             ]
         },
         "sotsuron_models/sotsuron2_pianoroll_distance_model/generated/00001644_TRNUKNP128F933D7F7/npy/5.npy": {
@@ -3258,7 +3258,7 @@
                 ]
             ],
             "DP": [
-                4.0
+                0.0975609756097561
             ],
             "TD": [
                 [
@@ -3289,7 +3289,7 @@
                 ]
             ],
             "COS_SIM": [
-                0.92357337474823
+                0.8791278600692749
             ]
         },
         "sotsuron_models/sotsuron2_pianoroll_distance_model/generated/00001644_TRNUKNP128F933D7F7/npy/48.npy": {
@@ -3312,7 +3312,7 @@
                 ]
             ],
             "DP": [
-                3.1500000000000004
+                0.08513513513513514
             ],
             "TD": [
                 [
@@ -3343,7 +3343,7 @@
                 ]
             ],
             "COS_SIM": [
-                0.9417255520820618
+                0.8529449701309204
             ]
         },
         "sotsuron_models/sotsuron2_pianoroll_distance_model/generated/00001644_TRNUKNP128F933D7F7/npy/1.npy": {
@@ -3366,7 +3366,7 @@
                 ]
             ],
             "DP": [
-                4.925000000000001
+                0.1119318181818182
             ],
             "TD": [
                 [
@@ -3397,7 +3397,7 @@
                 ]
             ],
             "COS_SIM": [
-                0.9459108710289001
+                0.838455855846405
             ]
         }
     },
@@ -3422,7 +3422,7 @@
                 ]
             ],
             "DP": [
-                11.3
+                0.113
             ],
             "TD": [
                 [
@@ -3453,7 +3453,7 @@
                 ]
             ],
             "COS_SIM": [
-                0.9415228366851807
+                0.8264520168304443
             ]
         },
         "sotsuron_models/sotsuron2_pianoroll_distance_model/generated/00004397_TRVXTCC12903CF466C/npy/0.npy": {
@@ -3476,7 +3476,7 @@
                 ]
             ],
             "DP": [
-                9.875
+                0.13166666666666665
             ],
             "TD": [
                 [
@@ -3507,7 +3507,7 @@
                 ]
             ],
             "COS_SIM": [
-                0.9548030495643616
+                0.9078841209411621
             ]
         },
         "sotsuron_models/sotsuron2_pianoroll_distance_model/generated/00004397_TRVXTCC12903CF466C/npy/60.npy": {
@@ -3530,7 +3530,7 @@
                 ]
             ],
             "DP": [
-                13.275
+                0.12642857142857145
             ],
             "TD": [
                 [
@@ -3561,7 +3561,7 @@
                 ]
             ],
             "COS_SIM": [
-                0.9179956316947937
+                0.8781574964523315
             ]
         },
         "sotsuron_models/sotsuron2_pianoroll_distance_model/generated/00004397_TRVXTCC12903CF466C/npy/10.npy": {
@@ -3584,7 +3584,7 @@
                 ]
             ],
             "DP": [
-                10.275
+                0.11168478260869566
             ],
             "TD": [
                 [
@@ -3615,7 +3615,7 @@
                 ]
             ],
             "COS_SIM": [
-                0.8458223342895508
+                0.8711798787117004
             ]
         },
         "sotsuron_models/sotsuron2_pianoroll_distance_model/generated/00004397_TRVXTCC12903CF466C/npy/17.npy": {
@@ -3638,7 +3638,7 @@
                 ]
             ],
             "DP": [
-                11.3
+                0.1153061224489796
             ],
             "TD": [
                 [
@@ -3669,7 +3669,7 @@
                 ]
             ],
             "COS_SIM": [
-                0.8611946105957031
+                0.8685921430587769
             ]
         },
         "sotsuron_models/sotsuron2_pianoroll_distance_model/generated/00004397_TRVXTCC12903CF466C/npy/58.npy": {
@@ -3692,7 +3692,7 @@
                 ]
             ],
             "DP": [
-                11.025
+                0.12115384615384615
             ],
             "TD": [
                 [
@@ -3723,7 +3723,7 @@
                 ]
             ],
             "COS_SIM": [
-                0.8845651745796204
+                0.872646689414978
             ]
         },
         "sotsuron_models/sotsuron2_pianoroll_distance_model/generated/00004397_TRVXTCC12903CF466C/npy/39.npy": {
@@ -3746,7 +3746,7 @@
                 ]
             ],
             "DP": [
-                10.8
+                0.1125
             ],
             "TD": [
                 [
@@ -3777,7 +3777,7 @@
                 ]
             ],
             "COS_SIM": [
-                0.9544659852981567
+                0.8599400520324707
             ]
         },
         "sotsuron_models/sotsuron2_pianoroll_distance_model/generated/00004397_TRVXTCC12903CF466C/npy/35.npy": {
@@ -3800,7 +3800,7 @@
                 ]
             ],
             "DP": [
-                11.55
+                0.11666666666666667
             ],
             "TD": [
                 [
@@ -3831,7 +3831,7 @@
                 ]
             ],
             "COS_SIM": [
-                0.9517350792884827
+                0.8596531748771667
             ]
         }
     }

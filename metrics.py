@@ -86,7 +86,7 @@ def drum_pattern(tensor, n_measures=4, measure_resolution=16, drum_track=0, tole
     for i_song in range(n_songs):
         tensor_ = tensor[song_resolution * i_song : song_resolution * (i_song + 1)]
 
-        dp[i_song] += np.sum(np.sum(tensor_, axis=1) * mask)
+        dp[i_song] += np.sum(np.sum(tensor_, axis=1) * mask) / np.sum(tensor_)
     return dp / n_measures
 
 def _tonal_matrix(r1=1.0, r2=1.0, r3=0.5):
