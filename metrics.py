@@ -195,6 +195,38 @@ def for_train():
         json.dump(result, f)
 
 
+def for_baseline():
+    dir = "/home/ksawada/Documents/lab/lab_research/ismir2019tutorial/outputs/baseline/20000/npy"
+
+    eb = []
+    upc = []
+    dp = []
+    td = []
+
+    for segment in glob.glob(os.path.join(dir, "*.npy")):
+        pianoroll = np.load(segment)
+        eb.append(empty_bars(pianoroll))
+        upc.append(used_pitch_classes(pianoroll))
+        dp.append(drum_pattern(pianoroll))
+        td.append(tonal_distance(pianoroll))
+    result = {}
+    result["EB"] = {}
+    result["UPC"] = {}
+    result["DP"] = {}
+    result["TD"] = {}
+
+    result["EB"]["avg"] = np.average(eb, axis=(0, 1)).tolist()
+    result["EB"]["var"] = np.var(eb, axis=(0, 1)).tolist()
+    result["UPC"]["avg"] = np.average(upc, axis=(0, 1)).tolist()
+    result["UPC"]["var"] = np.var(upc, axis=(0, 1)).tolist()
+    result["DP"]["avg"] = np.average(dp, axis=(0, 1)).tolist()
+    result["DP"]["var"] = np.var(dp, axis=(0, 1)).tolist()
+    result["TD"]["avg"] = get_triu(np.average(td, axis=(0, 1))).tolist()
+    result["TD"]["var"] = get_triu(np.var(td, axis=(0, 1))).tolist()
+
+    with open("baseline_avg_var.json", "w") as f:
+        json.dump(result, f)
+
 def for_generated():
     n_tracks = 5
     n_measures = 4
@@ -340,4 +372,5 @@ if __name__ == "__main__":
     # for_generated()
     # avg_var()
 
-    for_train()
+    # for_train()
+    for_baseline()
