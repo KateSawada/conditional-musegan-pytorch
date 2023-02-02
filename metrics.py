@@ -213,6 +213,84 @@ def for_generated():
         with open(out_file_path, "w") as f:
             json.dump(out_json, f)
 
+
+def process_avg_var(json_name):
+    target_dirs = [
+        "sotsuron_models/sotsuron1_d_conditioning_model",
+        "sotsuron_models/sotsuron2_pianoroll_distance_model",
+        "sotsuron_models/sotsuron3_embedding_distance_model",
+        ]
+    for dir in target_dirs:
+        with open(os.path.join(dir, f"{json_name}.json")) as f:
+            json_ = json.load(f)
+        eb = []
+        upc = []
+        dp = []
+        td = []
+        cos_sim_ = []
+        songs = list(json_.keys())
+        for song in songs:
+            for segment in json_[song].keys():
+                eb.append(json_[song][segment]["EB"])
+                upc.append(json_[song][segment]["UPC"])
+                dp.append(json_[song][segment]["DP"])
+                td.append(json_[song][segment]["TD"])
+                cos_sim_.append(json_[song][segment]["COS_SIM"])
+        eb = np.array(eb)
+        upc = np.array(upc)
+        dp = np.array(dp)
+        td = np.array(td)
+        cos_sim_ = np.array(cos_sim_)
+
+        result = {}
+        result["EB"] = {}
+        result["UPC"] = {}
+        result["DP"] = {}
+        result["TD"] = {}
+        result["COS_SIM"] = {}
+
+        result["EB"]["avg"] = np.average(eb, axis=(0, 1)).tolist()
+        result["EB"]["var"] = np.var(eb, axis=(0, 1)).tolist()
+        result["UPC"]["avg"] = np.average(upc, axis=(0, 1)).tolist()
+        result["UPC"]["var"] = np.var(upc, axis=(0, 1)).tolist()
+        result["DP"]["avg"] = np.average(dp, axis=(0, 1)).tolist()
+        result["DP"]["var"] = np.var(dp, axis=(0, 1)).tolist()
+        result["TD"]["avg"] = get_triu(np.average(td, axis=(0, 1))).tolist()
+        result["TD"]["var"] = get_triu(np.var(td, axis=(0, 1))).tolist()
+        result["COS_SIM"]["avg"] = np.average(cos_sim_, axis=(0, 1)).tolist()
+        result["COS_SIM"]["var"] = np.var(cos_sim_, axis=(0, 1)).tolist()
+
+        with open(os.path.join(dir, f"{json_name}_avg_var.json"), "w") as f:
+            json.dump(result, f)
+
+
+def get_triu(ary):
+    """2次元正方行列の，対角成分より上の要素を1次元に変換
+
+    Args:
+        ary (_type_): _description_
+
+    Returns:
+        _type_: _description_
+    """
+    new_ary = []
+    dim = len(ary)
+    for i in range(dim - 1):
+        for j in range(dim - 1 - i):
+            new_ary.append(ary[i][i + j + 1])
+
+    return np.array(new_ary)
+
+
+def avg_var():
+    json_names = [
+        "metrics_noise",
+        "metrics_ref",
+        "metrics_repeat",
+        ]
+    for i in json_names:
+        process_avg_var(i)
+
 if __name__ == "__main__":
     # tensor = np.load("outputs/sotsuron2/generated/s2_d_conditioning_f-conditioning_64-latent_64-adv_hinge-g_recon_L2_0-g_emb_COS_1_model/200000step/20230124-123444/generated.npy")
     # tensor = np.load("outputs/sotsuron/generated/d_conditioning_f-conditioning_64-latent_64-adv_hinge-g_recon_BCE_1_model/1000000step/20230110-115255/generated.npy")
@@ -221,4 +299,5 @@ if __name__ == "__main__":
     # print(drum_pattern(tensor))
     # print(tonal_distance(tensor))
 
-    for_generated()
+    # for_generated()
+    avg_var()
