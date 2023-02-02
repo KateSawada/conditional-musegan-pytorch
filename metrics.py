@@ -157,6 +157,44 @@ def cos_sim(v1, v2):
     return np.dot(v1, v2) / (np.linalg.norm(v1) * np.linalg.norm(v2))
 
 
+def for_train():
+    n_tracks = 5
+    n_measures = 4
+    measure_resolution = 16
+    n_pitches = 72
+
+    with open("data/json/train_dict.json") as f:
+        train_dict = json.load(f)
+    eb = []
+    upc = []
+    dp = []
+    td = []
+    for song in train_dict.keys():
+        for segment in train_dict[song]:
+            pianoroll = np.load(segment)
+            eb.append(empty_bars(pianoroll))
+            upc.append(used_pitch_classes(pianoroll))
+            dp.append(drum_pattern(pianoroll))
+            td.append(tonal_distance(pianoroll))
+    result = {}
+    result["EB"] = {}
+    result["UPC"] = {}
+    result["DP"] = {}
+    result["TD"] = {}
+
+    result["EB"]["avg"] = np.average(eb, axis=(0, 1)).tolist()
+    result["EB"]["var"] = np.var(eb, axis=(0, 1)).tolist()
+    result["UPC"]["avg"] = np.average(upc, axis=(0, 1)).tolist()
+    result["UPC"]["var"] = np.var(upc, axis=(0, 1)).tolist()
+    result["DP"]["avg"] = np.average(dp, axis=(0, 1)).tolist()
+    result["DP"]["var"] = np.var(dp, axis=(0, 1)).tolist()
+    result["TD"]["avg"] = get_triu(np.average(td, axis=(0, 1))).tolist()
+    result["TD"]["var"] = get_triu(np.var(td, axis=(0, 1))).tolist()
+
+    with open("train_avg_var.json", "w") as f:
+        json.dump(result, f)
+
+
 def for_generated():
     n_tracks = 5
     n_measures = 4
@@ -300,4 +338,6 @@ if __name__ == "__main__":
     # print(tonal_distance(tensor))
 
     # for_generated()
-    avg_var()
+    # avg_var()
+
+    for_train()
