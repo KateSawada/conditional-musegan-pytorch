@@ -157,14 +157,7 @@ def cos_sim(v1, v2):
     return np.dot(v1, v2) / (np.linalg.norm(v1) * np.linalg.norm(v2))
 
 
-if __name__ == "__main__":
-    # tensor = np.load("outputs/sotsuron2/generated/s2_d_conditioning_f-conditioning_64-latent_64-adv_hinge-g_recon_L2_0-g_emb_COS_1_model/200000step/20230124-123444/generated.npy")
-    # tensor = np.load("outputs/sotsuron/generated/d_conditioning_f-conditioning_64-latent_64-adv_hinge-g_recon_BCE_1_model/1000000step/20230110-115255/generated.npy")
-    # print(empty_bars(tensor))
-    # print(used_pitch_classes(tensor))
-    # print(drum_pattern(tensor))
-    # print(tonal_distance(tensor))
-
+def for_generated():
     n_tracks = 5
     n_measures = 4
     measure_resolution = 16
@@ -219,3 +212,13 @@ if __name__ == "__main__":
 
         with open(out_file_path, "w") as f:
             json.dump(out_json, f)
+
+if __name__ == "__main__":
+    # tensor = np.load("outputs/sotsuron2/generated/s2_d_conditioning_f-conditioning_64-latent_64-adv_hinge-g_recon_L2_0-g_emb_COS_1_model/200000step/20230124-123444/generated.npy")
+    # tensor = np.load("outputs/sotsuron/generated/d_conditioning_f-conditioning_64-latent_64-adv_hinge-g_recon_BCE_1_model/1000000step/20230110-115255/generated.npy")
+    # print(empty_bars(tensor))
+    # print(used_pitch_classes(tensor))
+    # print(drum_pattern(tensor))
+    # print(tonal_distance(tensor))
+
+    for_generated()
