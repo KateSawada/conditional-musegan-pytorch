@@ -236,7 +236,9 @@ def baseline_similarity():
     distances = np.array(distances)
 
     distance_avg = np.average(distances)
+    distance_std = np.std(distances)
     print(distance_avg)
+    print(distance_std)
 
 def for_baseline():
     dir = "/home/ksawada/Documents/lab/lab_research/ismir2019tutorial/outputs/baseline/100000/npy"
@@ -404,6 +406,83 @@ def avg_var():
     for i in json_names:
         process_avg_var(i)
 
+def train_sim():
+    n_tracks = 5
+    n_measures = 4
+    measure_resolution = 16
+    n_pitches = 72
+    output_dim = 64
+
+    encoder = Encoder(n_tracks, n_measures, measure_resolution, n_pitches, output_dim)
+
+    # refとのembeddingの距離を計算しておく
+    references_json_path = "data/json/sotsuron_songs_dict.json"
+    with open(references_json_path) as f:
+        references_json = dict(json.load(f))
+    reference_path = []
+    for dir in references_json.keys():
+        for npy_path in references_json[dir]:
+            reference_path.append(npy_path)
+
+    import random
+    random.seed(0)
+
+    # 同じ楽曲から
+    songs = list(references_json.keys())
+    distance_same_song =[]
+    test_num = 64
+    for i in range(test_num):
+        song_idx = random.randint(0, len(songs) - 1)
+        ref1_path, ref2_path = random.sample(references_json[songs[song_idx]], 2)
+        ref1 = np.load(ref1_path)
+        ref2 = np.load(ref2_path)
+        with torch.inference_mode():
+            ref1_emb = encoder(torch.from_numpy(ref1.astype(np.float32))
+                    ).cpu().detach().numpy()[0]
+            ref2_emb = encoder(torch.from_numpy(ref2.astype(np.float32))
+                    ).cpu().detach().numpy()[0]
+        distance_same_song.append(cos_sim(ref1_emb, ref2_emb))
+
+    distance_same_avg = np.average(distance_same_song)
+    print(distance_same_avg)
+
+
+    distance_different_song =[]
+    test_num = 64
+    songs_idxs = [i for i in range(len(songs))]
+    random.seed(0)
+    for i in range(test_num):
+        song1_idx, song2_idx = random.sample(songs_idxs, 2)
+        ref1_path = random.choice(references_json[songs[song1_idx]])
+        ref2_path = random.choice(references_json[songs[song2_idx]])
+        ref1 = np.load(ref1_path)
+        ref2 = np.load(ref2_path)
+        with torch.inference_mode():
+            ref1_emb = encoder(torch.from_numpy(ref1.astype(np.float32))
+                    ).cpu().detach().numpy()[0]
+            ref2_emb = encoder(torch.from_numpy(ref2.astype(np.float32))
+                    ).cpu().detach().numpy()[0]
+        distance_different_song.append(cos_sim(ref1_emb, ref2_emb))
+
+    distance_different_avg = np.average(distance_different_song)
+    print(distance_different_avg)
+
+    return distance_same_avg, distance_different_avg
+
+def repeat_train_sim():
+    same= []
+    diff = []
+    n_trial = 32
+    for _ in range(n_trial):
+        s, d = train_sim()
+        same.append(s)
+        diff.append(d)
+    same = np.array(same)
+    diff = np.array(diff)
+    print("--")
+    print(np.average(same))
+    print(np.average(diff))
+
 if __name__ == "__main__":
     # tensor = np.load("outputs/sotsuron2/generated/s2_d_conditioning_f-conditioning_64-latent_64-adv_hinge-g_recon_L2_0-g_emb_COS_1_model/200000step/20230124-123444/generated.npy")
     # tensor = np.load("outputs/sotsuron/generated/d_conditioning_f-conditioning_64-latent_64-adv_hinge-g_recon_BCE_1_model/1000000step/20230110-115255/generated.npy")
@@ -418,3 +497,4 @@ if __name__ == "__main__":
     # for_train()
     # for_baseline()
     baseline_similarity()
+    # repeat_train_sim()
