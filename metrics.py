@@ -194,6 +194,49 @@ def for_train():
     with open("train_avg_var.json", "w") as f:
         json.dump(result, f)
 
+def baseline_similarity():
+    # refとのembeddingの距離を計算しておく
+    references_json_path = "data/json/sotsuron_songs_dict.json"
+    with open(references_json_path) as f:
+        references_json = dict(json.load(f))
+    reference_path = []
+    for dir in references_json.keys():
+        for npy_path in references_json[dir]:
+            reference_path.append(npy_path)
+
+    dir = "/home/ksawada/Documents/lab/lab_research/ismir2019tutorial/outputs/baseline/100000/npy"
+    generated_path = glob.glob(os.path.join(dir, "*.npy"))
+
+    assert len(reference_path) == len(generated_path), "length not match"
+
+    n_tracks = 5
+    n_measures = 4
+    measure_resolution = 16
+    n_pitches = 72
+    output_dim = 64
+
+    encoder = Encoder(n_tracks, n_measures, measure_resolution, n_pitches, output_dim)
+
+    distances = []
+
+    import random
+    random.seed(0)
+    random.shuffle(reference_path)
+    random.shuffle(generated_path)
+
+    for i in range(len(reference_path)):
+        ref = np.load(reference_path[i])
+        gen = np.load(generated_path[i])
+        with torch.inference_mode():
+            ref_emb = encoder(torch.from_numpy(ref.astype(np.float32))
+                ).cpu().detach().numpy()[0]
+            gen_emb = encoder(torch.from_numpy(gen.astype(np.float32))
+                ).cpu().detach().numpy()[0]
+        distances.append(cos_sim(ref_emb, gen_emb))
+    distances = np.array(distances)
+
+    distance_avg = np.average(distances)
+    print(distance_avg)
 
 def for_baseline():
     dir = "/home/ksawada/Documents/lab/lab_research/ismir2019tutorial/outputs/baseline/100000/npy"
@@ -373,4 +416,5 @@ if __name__ == "__main__":
     # avg_var()
 
     # for_train()
-    for_baseline()
+    # for_baseline()
+    baseline_similarity()
